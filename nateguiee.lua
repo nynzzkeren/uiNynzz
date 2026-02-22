@@ -573,7 +573,7 @@ function Speed_Library:CreateWindow(Config)
   local Main = Custom:Create("Frame", {
     AnchorPoint = Vector2.new(0.5, 0.5),
     BackgroundColor3 = Custom.BackgroundDark,
-    BackgroundTransparency = 0.05,
+    BackgroundTransparency = 0.65,
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
     Position = UDim2.new(0.5, 0, 0.5, 0),
@@ -604,7 +604,7 @@ function Speed_Library:CreateWindow(Config)
 
   local Top = Custom:Create("Frame", {
     BackgroundColor3 = Custom.BackgroundDark,
-    BackgroundTransparency = 0.2,
+    BackgroundTransparency = 0.65,
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
     Size = UDim2.new(1, 0, 0, 38),
@@ -719,7 +719,7 @@ function Speed_Library:CreateWindow(Config)
 
   local LayersTab = Custom:Create("Frame", {
     BackgroundColor3 = Custom.FrameDark,
-    BackgroundTransparency = 0.1,
+    BackgroundTransparency = 0.65,
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
     Position = UDim2.new(0, 9, 0, 50),
@@ -759,7 +759,7 @@ function Speed_Library:CreateWindow(Config)
 
   local Layers = Custom:Create("Frame", {
     BackgroundColor3 = Custom.FrameDark,
-    BackgroundTransparency = 0.1,
+    BackgroundTransparency = 0.65,
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
     Position = UDim2.new(0, TabWidth + 18, 0, 50),
