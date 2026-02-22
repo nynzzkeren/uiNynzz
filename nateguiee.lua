@@ -356,7 +356,7 @@ function Speed_Library:SetNotification(Config)
     local DropShadow = Custom:Create("ImageLabel", {
         Image="rbxassetid://6015897843",
         ImageColor3=Custom.BackgroundDark,
-        ImageTransparency=0.3,
+        ImageTransparency=0.7,
         ScaleType=Enum.ScaleType.Slice,
         SliceCenter=Rect.new(49,49,450,450),
         AnchorPoint=Vector2.new(0.5,0.5),
@@ -586,20 +586,26 @@ function Speed_Library:CreateWindow(Config)
   }, Main)
 
   -- Modern gradient background
-  Custom:Create("UIGradient", {
+ -- Gradient untuk background utama
+Custom:Create("UIGradient", {
     Color = ColorSequence.new{
-      ColorSequenceKeypoint.new(0, Custom.BackgroundDark),
-      ColorSequenceKeypoint.new(0.3, Custom.FrameDark),
-      ColorSequenceKeypoint.new(0.7, Custom.AccentColor),
-      ColorSequenceKeypoint.new(1, Custom.DarkBlue)
+        ColorSequenceKeypoint.new(0, Custom.BackgroundDark),
+        ColorSequenceKeypoint.new(0.3, Custom.FrameDark),
+        ColorSequenceKeypoint.new(0.7, Custom.AccentColor),
+        ColorSequenceKeypoint.new(1, Custom.DarkBlue)
+    },
+    Transparency = NumberSequence.new{
+        NumberSequenceKeypoint.new(0, 0.4),   -- 40% transparan
+        NumberSequenceKeypoint.new(0.5, 0.6), -- 60% transparan
+        NumberSequenceKeypoint.new(1, 0.8)    -- 80% transparan
     },
     Rotation = 135,
-  }, Main)
+}, Main)
 
   Custom:Create("UIStroke", {
     Color = Custom.ColorRGB,
-    Thickness = 2,
-    Transparency = 0.3
+    Thickness = 1,
+    Transparency = 0.7
   }, Main)
 
   local Top = Custom:Create("Frame", {
@@ -742,8 +748,8 @@ function Speed_Library:CreateWindow(Config)
 
   Custom:Create("UIStroke", {
     Color = Custom.ColorRGB,
-    Thickness = 1,
-    Transparency = 0.6
+    Thickness = 0.8,
+    Transparency = 0.8
   }, LayersTab)
 
   Custom:Create("Frame", {
@@ -1603,7 +1609,7 @@ end
         local Button = Custom:Create("Frame", {
 					Name = "Button",
 					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-					BackgroundTransparency = 0.935,
+					BackgroundTransparency = 0.98,
 					BorderSizePixel = 0,
 					LayoutOrder = ItemCount,
 					Size = UDim2.new(1, 0, 0, 35)
@@ -1716,7 +1722,7 @@ function Item:AddToggle(Config)
     local Toggle = Custom:Create("Frame", {
         Name = "Toggle",
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-        BackgroundTransparency = 0.935,
+        BackgroundTransparency = 0.98,
         BorderSizePixel = 0,
         LayoutOrder = ItemCount,
         Size = UDim2.new(1, 0, 0, 35)
