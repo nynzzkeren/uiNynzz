@@ -799,7 +799,7 @@ Custom:Create("UIGradient", {
     TextColor3 = Color3.fromRGB(255, 255, 255),
     TextSize = 24,
     TextWrapped = true,
-    TextXAlignment = Enum.TextXAlignment.Left,
+    TextXAlignment = Enum.TextXAlignment.Center,
     BackgroundColor3 = Color3.fromRGB(255, 255, 255),
     BackgroundTransparency = 0.9990000128746033,
     BorderColor3 = Color3.fromRGB(0, 0, 0),
