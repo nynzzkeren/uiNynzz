@@ -356,7 +356,7 @@ function Speed_Library:SetNotification(Config)
     local DropShadow = Custom:Create("ImageLabel", {
         Image="rbxassetid://6015897843",
         ImageColor3=Custom.BackgroundDark,
-        ImageTransparency=0.7,
+        ImageTransparency=0.47,
         ScaleType=Enum.ScaleType.Slice,
         SliceCenter=Rect.new(49,49,450,450),
         AnchorPoint=Vector2.new(0.5,0.5),
@@ -573,7 +573,7 @@ function Speed_Library:CreateWindow(Config)
   local Main = Custom:Create("Frame", {
     AnchorPoint = Vector2.new(0.5, 0.5),
     BackgroundColor3 = Custom.BackgroundDark,
-    BackgroundTransparency = 0.65,
+    BackgroundTransparency = 0.35,
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
     Position = UDim2.new(0.5, 0, 0.5, 0),
@@ -595,22 +595,22 @@ Custom:Create("UIGradient", {
         ColorSequenceKeypoint.new(1, Custom.DarkBlue)
     },
     Transparency = NumberSequence.new{
-        NumberSequenceKeypoint.new(0, 0.4),   -- 40% transparan
-        NumberSequenceKeypoint.new(0.5, 0.6), -- 60% transparan
-        NumberSequenceKeypoint.new(1, 0.8)    -- 80% transparan
+        NumberSequenceKeypoint.new(0, 0.2),   -- 40% transparan
+        NumberSequenceKeypoint.new(0.5, 0.3), -- 60% transparan
+        NumberSequenceKeypoint.new(1, 0.4)    -- 80% transparan
     },
     Rotation = 135,
 }, Main)
 
   Custom:Create("UIStroke", {
     Color = Custom.ColorRGB,
-    Thickness = 1,
-    Transparency = 0.7
+    Thickness = 1.2,
+    Transparency = 0.4
   }, Main)
 
   local Top = Custom:Create("Frame", {
     BackgroundColor3 = Custom.BackgroundDark,
-    BackgroundTransparency = 0.65,
+    BackgroundTransparency = 0.35,
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
     Size = UDim2.new(1, 0, 0, 38),
@@ -725,7 +725,7 @@ Custom:Create("UIGradient", {
 
   local LayersTab = Custom:Create("Frame", {
     BackgroundColor3 = Custom.FrameDark,
-    BackgroundTransparency = 0.65,
+    BackgroundTransparency = 0.35,
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
     Position = UDim2.new(0, 9, 0, 50),
@@ -748,8 +748,8 @@ Custom:Create("UIGradient", {
 
   Custom:Create("UIStroke", {
     Color = Custom.ColorRGB,
-    Thickness = 0.8,
-    Transparency = 0.8
+    Thickness = 1,
+    Transparency = 0.5
   }, LayersTab)
 
   Custom:Create("Frame", {
@@ -765,7 +765,7 @@ Custom:Create("UIGradient", {
 
   local Layers = Custom:Create("Frame", {
     BackgroundColor3 = Custom.FrameDark,
-    BackgroundTransparency = 0.65,
+    BackgroundTransparency = 0.35,
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
     Position = UDim2.new(0, TabWidth + 18, 0, 50),
@@ -1609,7 +1609,7 @@ end
         local Button = Custom:Create("Frame", {
 					Name = "Button",
 					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-					BackgroundTransparency = 0.98,
+					BackgroundTransparency = 0.96,
 					BorderSizePixel = 0,
 					LayoutOrder = ItemCount,
 					Size = UDim2.new(1, 0, 0, 35)
