@@ -19,11 +19,11 @@ end
 
 local Custom = {} do
   -- Modern gradient colors: Deep purple to dark blue
-  Custom.ColorRGB = Color3.fromRGB(255, 255, 255) -- Putih
+  Custom.ColorRGB = Color3.fromRGB(255, 255, 0.5) -- Putih
   Custom.AccentColor = Color3.fromRGB(200, 200, 200) -- Indigo accent
   Custom.DarkBlue = Color3.fromRGB(150, 150, 150) -- MidnightBlue
   Custom.BackgroundDark = Color3.fromRGB(20, 20, 20) -- Very dark blue-black
-  Custom.FrameDark = Color3.fromRGB(40, 40, 40) -- Slightly lighter dark
+  Custom.FrameDark = Color3.fromRGB(25, 25, 25) -- Slightly lighter dark
 
   function Custom:Create(Name, Properties, Parent)
     local _instance = Instance.new(Name)
