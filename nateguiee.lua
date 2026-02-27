@@ -1295,7 +1295,7 @@ Custom:Create("UIGradient", {
       }, FeatureFrame)
   
       local FeatureImg = Custom:Create("ImageLabel", {
-        Image = "rbxassetid://16851841101",
+        Image = "rbxassetid://125833548337848",
         ImageColor3 = Color3.fromRGB(255, 255, 255),
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
