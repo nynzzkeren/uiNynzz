@@ -19,10 +19,10 @@ end
 
 local Custom = {} do
   -- Modern gradient colors: Deep purple to dark blue
-  Custom.ColorRGB = Color3.fromRGB(255, 255, 0.5) -- Putih
-  Custom.AccentColor = Color3.fromRGB(200, 200, 200) -- Indigo accent
-  Custom.DarkBlue = Color3.fromRGB(150, 150, 150) -- MidnightBlue
-  Custom.BackgroundDark = Color3.fromRGB(20, 20, 20) -- Very dark blue-black
+  Custom.ColorRGB = Color3.fromRGB(180, 180, 180) -- Putih
+  Custom.AccentColor = Color3.fromRGB(140, 140, 140) -- Indigo accent
+  Custom.DarkBlue = Color3.fromRGB(100, 100, 100) -- MidnightBlue
+  Custom.BackgroundDark = Color3.fromRGB(15, 15, 15) -- Very dark blue-black
   Custom.FrameDark = Color3.fromRGB(25, 25, 25) -- Slightly lighter dark
 
   function Custom:Create(Name, Properties, Parent)
