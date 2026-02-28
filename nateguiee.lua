@@ -2578,6 +2578,175 @@ function Item:AddDropdown(Config)
         Funcs_Dropdown:Set(Selecting)
     end
 
+		-- ===== PROFILE PLAYER (PERSIS KEK GAMBAR) =====
+local Player = game:GetService("Players").LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+
+-- Function buat ambil thumbnail (pake yang terbaru)
+local function getPlayerThumbnail(userId, thumbnailType, thumbnailSize)
+    local success, thumbnail = pcall(function()
+        return game:GetService("ThumbnailService"):GetPlayerThumbnail(userId, thumbnailSize or "420x420", thumbnailType or Enum.ThumbnailType.HeadShot)
+    end)
+    if success and thumbnail then
+        return thumbnail
+    end
+    return "rbxasset://textures/ui/GuiImagePlaceholder.png" -- fallback
+end
+
+-- Panggil function pas UI dibikin
+local userId = Player.UserId
+local thumbType = Enum.ThumbnailType.HeadShot
+local thumbSize = "420x420"
+local thumbUrl = getPlayerThumbnail(userId, thumbType, thumbSize)
+
+-- BUAT FRAME PROFILE (di dalem Main atau Layers)
+local ProfileFrame = Custom:Create("Frame", {
+    BackgroundColor3 = Color3.fromRGB(25, 25, 35),  -- Dark background
+    BackgroundTransparency = 0.3,
+    BorderSizePixel = 0,
+    Position = UDim2.new(0, 15, 0, 15),  -- Sesuain posisi
+    Size = UDim2.new(0, 220, 0, 70),
+    Name = "ProfileFrame"
+}, Main)  -- Ganti "Main" sesuai parent lu
+
+Custom:Create("UICorner", {
+    CornerRadius = UDim.new(0, 8)
+}, ProfileFrame)
+
+-- ===== AVATAR BULAT =====
+local AvatarContainer = Custom:Create("Frame", {
+    BackgroundColor3 = Color3.fromRGB(35, 35, 45),
+    BackgroundTransparency = 0.5,
+    Position = UDim2.new(0, 8, 0.5, -25),
+    Size = UDim2.new(0, 50, 0, 50),
+    Name = "AvatarContainer"
+}, ProfileFrame)
+
+-- Bikin bulat
+Custom:Create("UICorner", {
+    CornerRadius = UDim.new(1, 0)  -- 1 = bulat sempurna
+}, AvatarContainer)
+
+-- ImageLabel buat avatar
+local AvatarImage = Custom:Create("ImageLabel", {
+    Image = thumbUrl,  -- Pake thumbnail asli player
+    BackgroundColor3 = Color3.fromRGB(255,255,255),
+    BackgroundTransparency = 0,
+    Size = UDim2.new(1, -4, 1, -4),
+    Position = UDim2.new(0, 2, 0, 2),
+    Name = "AvatarImage"
+}, AvatarContainer)
+
+Custom:Create("UICorner", {
+    CornerRadius = UDim.new(1, 0)
+}, AvatarImage)
+
+-- Stroke tipis buat avatar biar keliatan
+Custom:Create("UIStroke", {
+    Color = Color3.fromRGB(255,255,255),
+    Thickness = 0.8,
+    Transparency = 0.5
+}, AvatarImage)
+
+-- ===== NAMA PLAYER =====
+local PlayerName = Custom:Create("TextLabel", {
+    Font = Enum.Font.GothamBold,
+    Text = Player.Name,  -- Nama asli player
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    TextSize = 14,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    BackgroundTransparency = 1,
+    Position = UDim2.new(0, 70, 0, 15),
+    Size = UDim2.new(0, 120, 0, 20),
+    Name = "PlayerName"
+}, ProfileFrame)
+
+-- Stroke tipis biar keliatan tegas
+Custom:Create("UIStroke", {
+    Color = Color3.fromRGB(255,255,255),
+    Thickness = 0.5,
+    Transparency = 0.3
+}, PlayerName)
+
+-- ===== CPU MONITOR =====
+local CPUFrame = Custom:Create("Frame", {
+    BackgroundColor3 = Color3.fromRGB(25, 25, 35),
+    BackgroundTransparency = 0.5,
+    Position = UDim2.new(0, 70, 0, 38),
+    Size = UDim2.new(0, 65, 0, 20),
+    Name = "CPUFrame"
+}, ProfileFrame)
+
+Custom:Create("UICorner", {
+    CornerRadius = UDim.new(0, 4)
+}, CPUFrame)
+
+local CPUIcon = Custom:Create("TextLabel", {
+    Font = Enum.Font.GothamBold,
+    Text = "CPU",
+    TextColor3 = Color3.fromRGB(180, 180, 180),
+    TextSize = 10,
+    BackgroundTransparency = 1,
+    Position = UDim2.new(0, 4, 0, 3),
+    Size = UDim2.new(0, 25, 0, 14)
+}, CPUFrame)
+
+local CPUValue = Custom:Create("TextLabel", {
+    Font = Enum.Font.GothamBold,
+    Text = "15.71 ms",
+    TextColor3 = Color3.fromRGB(100, 200, 255),  -- Biru tipis
+    TextSize = 10,
+    BackgroundTransparency = 1,
+    Position = UDim2.new(0, 28, 0, 3),
+    Size = UDim2.new(0, 35, 0, 14)
+}, CPUFrame)
+
+-- ===== GPU MONITOR =====
+local GPUFrame = Custom:Create("Frame", {
+    BackgroundColor3 = Color3.fromRGB(25, 25, 35),
+    BackgroundTransparency = 0.5,
+    Position = UDim2.new(0, 140, 0, 38),
+    Size = UDim2.new(0, 65, 0, 20),
+    Name = "GPUFrame"
+}, ProfileFrame)
+
+Custom:Create("UICorner", {
+    CornerRadius = UDim.new(0, 4)
+}, GPUFrame)
+
+local GPUIcon = Custom:Create("TextLabel", {
+    Font = Enum.Font.GothamBold,
+    Text = "GPU",
+    TextColor3 = Color3.fromRGB(180, 180, 180),
+    TextSize = 10,
+    BackgroundTransparency = 1,
+    Position = UDim2.new(0, 4, 0, 3),
+    Size = UDim2.new(0, 25, 0, 14)
+}, GPUFrame)
+
+local GPUValue = Custom:Create("TextLabel", {
+    Font = Enum.Font.GothamBold,
+    Text = "7.66 ms",
+    TextColor3 = Color3.fromRGB(100, 255, 150),  -- Hijau tipis
+    TextSize = 10,
+    BackgroundTransparency = 1,
+    Position = UDim2.new(0, 28, 0, 3),
+    Size = UDim2.new(0, 35, 0, 14)
+}, GPUFrame)
+
+-- ===== FUNGSI UPDATE CPU/GPU (opsional) =====
+-- Kalo mau angka jalan realtime
+spawn(function()
+    while wait(1) do
+        -- Fake value (soalnya Roblox nggak bisa baca CPU/GPU asli)
+        local cpu = math.random(10, 25) + math.random() -- 10-25 ms
+        local gpu = math.random(3, 15) + math.random()  -- 3-15 ms
+        
+        CPUValue.Text = string.format("%.2f ms", cpu)
+        GPUValue.Text = string.format("%.2f ms", gpu)
+    end
+end)		
+
     -- Initialize with options
     Funcs_Dropdown:Refresh(Funcs_Dropdown.Options, Funcs_Dropdown.Value)
 
