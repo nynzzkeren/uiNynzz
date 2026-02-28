@@ -2576,9 +2576,9 @@ function Item:AddDropdown(Config)
 
         Funcs_Dropdown.Options = RefreshList
         Funcs_Dropdown:Set(Selecting)
-    end
+    end		
 
-		-- ===== PROFILE PLAYER (PERSIS KEK GAMBAR) =====
+				-- ===== PROFILE PLAYER (PERSIS KEK GAMBAR) =====
 local Player = game:GetService("Players").LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 
@@ -2745,7 +2745,7 @@ spawn(function()
         CPUValue.Text = string.format("%.2f ms", cpu)
         GPUValue.Text = string.format("%.2f ms", gpu)
     end
-end)		
+end)
 
     -- Initialize with options
     Funcs_Dropdown:Refresh(Funcs_Dropdown.Options, Funcs_Dropdown.Value)
