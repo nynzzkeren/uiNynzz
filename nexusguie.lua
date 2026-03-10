@@ -1,15 +1,14 @@
 --[[
 ╔═══════════════════════════════════════════════════════════╗
-║  ███╗   ██╗███████╗██╗  ██╗██╗   ██╗███████╗             ║
-║  ████╗  ██║██╔════╝╚██╗██╔╝██║   ██║██╔════╝             ║
-║  ██╔██╗ ██║█████╗   ╚███╔╝ ██║   ██║███████╗             ║
-║  ██║╚██╗██║██╔══╝   ██╔██╗ ██║   ██║╚════██║             ║
-║  ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║             ║
-║  ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚══════╝  UI v3.0   ║
+║   _   _       _       _                 _   _       _     ║
+║  | \ | | __ _| |_ ___(_)_ __ __ _     | | | |_   _| |__  ║
+║  |  \| |/ _` | __/ _ \ | '__/ _` |    | |_| | | | | '_ \ ║
+║  | |\  | (_| | ||  __/ | | | (_| |    |  _  | |_| | |_) |║
+║  |_| \_|\__,_|\__\___|_|_|  \__,_|    |_| |_|\__,_|_.__/ ║
 ╠═══════════════════════════════════════════════════════════╣
-║  v3.0.0  ·  Professional Roblox Exploit UI Library        ║
-║  • Fixed close button  • Premium loader  • Float icon     ║
-║  • Button / Toggle / Slider  • Theme system  • Notifs     ║
+║  v4.0.0  ·  Nateira Hub  ·  Roblox UI Library             ║
+║  • Circular float icon   • Collapsible sections           ║
+║  • Nateira branding      • Smooth collapse tweens         ║
 ╚═══════════════════════════════════════════════════════════╝
 --]]
 
@@ -228,7 +227,7 @@ function NexusUI:_Gui()
     local g
     local ok = pcall(function()
         g = U.New("ScreenGui", {
-            Name           = "NexusUI_v3",
+            Name           = "NateirHub_v4",
             ResetOnSpawn   = false,
             ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
             DisplayOrder   = 999,
@@ -238,7 +237,7 @@ function NexusUI:_Gui()
     end)
     if not ok then
         g = U.New("ScreenGui", {
-            Name           = "NexusUI_v3",
+            Name           = "NateirHub_v4",
             ResetOnSpawn   = false,
             ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
             DisplayOrder   = 999,
@@ -329,7 +328,7 @@ function NexusUI:_Loader(gui, title, done)
         Size                   = UDim2.new(1, -20, 0, 16),
         Position               = UDim2.new(0, 10, 0, 94),
         BackgroundTransparency = 1,
-        Text                   = title or "NexusUI",
+        Text                   = title or "Nateira Hub",
         TextColor3             = T.Text,
         TextSize               = 13,
         Font                   = Enum.Font.GothamBold,
@@ -592,7 +591,7 @@ end
 -- ═══════════════════════════════════════════════════════════
 function NexusUI:CreateWindow(cfg)
     cfg = cfg or {}
-    local winTitle   = cfg.Title      or "NexusUI"
+    local winTitle   = cfg.Title      or "Nateira Hub"
     local toggleKey  = cfg.ToggleKey  or Enum.KeyCode.RightShift
     local themeName  = cfg.Theme      or "Dark"
     local useLoader  = cfg.Loader     ~= false
@@ -687,7 +686,7 @@ function NexusUI:CreateWindow(cfg)
     })
     U.Corner(2, accentLine)
 
-    -- Logo badge
+    -- Logo badge  (N for Nateira)
     local logoBadge = U.New("Frame", {
         Size             = UDim2.new(0, 20, 0, 20),
         Position         = UDim2.new(0, 8, 0.5, -10),
@@ -696,11 +695,11 @@ function NexusUI:CreateWindow(cfg)
         ZIndex           = 22,
         Parent           = topbar,
     })
-    U.Corner(6, logoBadge)
+    U.Corner(10, logoBadge)   -- fully circular badge
     U.Stroke(1, T.AccentMid, 0, logoBadge)
     U.New("TextLabel", {
         Size=UDim2.new(1,0,1,0), BackgroundTransparency=1,
-        Text="⬡", TextColor3=T.Accent, TextSize=11,
+        Text="N", TextColor3=T.Accent, TextSize=11,
         Font=Enum.Font.GothamBold, ZIndex=23, Parent=logoBadge,
     })
 
@@ -819,87 +818,179 @@ function NexusUI:CreateWindow(cfg)
     end)
 
     -- ═══════════════════════════════════════════════════════
-    --  FLOATING MINIMIZE ICON (cyber style)
+    --  FLOATING MINIMIZE ICON  — rounded-square app icon style
     -- ═══════════════════════════════════════════════════════
+    -- Subtle outer glow shadow (slightly larger, behind the icon)
+    local floatRing = U.New("Frame", {
+        Name               = "FloatRing",
+        Size               = UDim2.new(0, 64, 0, 64),
+        Position           = UDim2.new(0, 8, 0, 8),
+        BackgroundColor3   = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 0.55,
+        BorderSizePixel    = 0,
+        ZIndex             = 197,
+        Visible            = false,
+        Parent             = gui,
+    })
+    U.Corner(18, floatRing)   -- matches icon corner
+
+    -- Main rounded-square icon body (dark, like in the photo)
     local floatBtn = U.New("Frame", {
-        Name             = "FloatIcon",
-        Size             = UDim2.new(0, 38, 0, 38),
-        Position         = UDim2.new(0, 16, 0, 16),
-        BackgroundColor3 = T.Surface,
+        Name               = "FloatIcon",
+        Size               = UDim2.new(0, 54, 0, 54),
+        Position           = UDim2.new(0, 16, 0, 16),
+        BackgroundColor3   = Color3.fromRGB(14, 14, 18),  -- near-black
         BackgroundTransparency = 0,
+        BorderSizePixel    = 0,
+        ZIndex             = 198,
+        Visible            = false,
+        Parent             = gui,
+    })
+    U.Corner(14, floatBtn)    -- iOS-style rounded square
+
+    -- Thin accent border
+    local floatStroke = U.Stroke(1, T.AccentMid, 0.2, floatBtn)
+
+    -- ── Geometric N logo  (two diagonal strokes, like in photo) ──
+    -- Left vertical bar of N
+    local nLeft = U.New("Frame", {
+        Size             = UDim2.new(0, 3, 0, 26),
+        Position         = UDim2.new(0.5, -13, 0.5, -13),
+        BackgroundColor3 = T.Accent,
+        BackgroundTransparency = 0.15,
         BorderSizePixel  = 0,
         ZIndex           = 200,
-        Visible          = false,
-        Parent           = gui,
+        Parent           = floatBtn,
     })
-    U.Corner(10, floatBtn)
-    U.Stroke(1, T.AccentMid, 0, floatBtn)
+    U.Corner(2, nLeft)
 
-    -- Glow pulse frame (behind icon)
-    local floatGlow = U.New("Frame", {
-        Size               = UDim2.new(1, 8, 1, 8),
-        Position           = UDim2.new(0, -4, 0, -4),
-        BackgroundColor3   = T.Accent,
-        BackgroundTransparency = 0.82,
+    -- Right vertical bar of N
+    local nRight = U.New("Frame", {
+        Size             = UDim2.new(0, 3, 0, 26),
+        Position         = UDim2.new(0.5, 10, 0.5, -13),
+        BackgroundColor3 = T.Accent,
+        BackgroundTransparency = 0.15,
+        BorderSizePixel  = 0,
+        ZIndex           = 200,
+        Parent           = floatBtn,
+    })
+    U.Corner(2, nRight)
+
+    -- Diagonal stroke of N (top-left to bottom-right)
+    local nDiag = U.New("Frame", {
+        Size             = UDim2.new(0, 3, 0, 30),
+        Position         = UDim2.new(0.5, -5, 0.5, -15),
+        BackgroundColor3 = T.Accent,
+        BackgroundTransparency = 0.15,
+        Rotation         = 22,   -- diagonal angle
+        BorderSizePixel  = 0,
+        ZIndex           = 200,
+        Parent           = floatBtn,
+    })
+    U.Corner(2, nDiag)
+
+    -- Tooltip pill — slides out to the right on hover
+    local floatTip = U.New("Frame", {
+        Size               = UDim2.new(0, 0, 0, 24),
+        Position           = UDim2.new(1, 8, 0.5, -12),
+        BackgroundColor3   = Color3.fromRGB(14, 14, 18),
+        BackgroundTransparency = 0,
         BorderSizePixel    = 0,
-        ZIndex             = 199,
-        Parent             = floatBtn,
-    })
-    U.Corner(13, floatGlow)
-
-    -- Hexagon logo
-    U.New("TextLabel", {
-        Size=UDim2.new(1,0,1,0), BackgroundTransparency=1,
-        Text="⬡", TextColor3=T.Accent, TextSize=18,
-        Font=Enum.Font.GothamBold, ZIndex=201, Parent=floatBtn,
-    })
-
-    -- Tooltip label
-    local floatTip = U.New("TextLabel", {
-        Size               = UDim2.new(0, 80, 0, 22),
-        Position           = UDim2.new(1, 6, 0.5, -11),
-        BackgroundColor3   = T.Surface,
-        BackgroundTransparency = 0.05,
-        Text               = winTitle,
-        TextColor3         = T.Text,
-        TextSize           = 10,
-        Font               = Enum.Font.GothamMedium,
+        ClipsDescendants   = true,
         ZIndex             = 201,
         Visible            = false,
         Parent             = floatBtn,
     })
-    U.Corner(6, floatTip)
+    U.Corner(7, floatTip)
     U.Stroke(1, T.Border, 0.3, floatTip)
-
-    -- Float icon hover
-    local floatHit = U.New("TextButton", {
-        Size=UDim2.new(1,0,1,0), BackgroundTransparency=1,
-        Text="", ZIndex=202, Parent=floatBtn,
+    U.New("TextLabel", {
+        Size               = UDim2.new(1,-12,1,0),
+        Position           = UDim2.new(0,6,0,0),
+        BackgroundTransparency = 1,
+        Text               = winTitle,
+        TextColor3         = T.Text,
+        TextSize           = 10,
+        Font               = Enum.Font.GothamMedium,
+        ZIndex             = 202,
+        Parent             = floatTip,
     })
+
+    -- Invisible hitbox
+    local floatHit = U.New("TextButton", {
+        Size               = UDim2.new(1,0,1,0),
+        BackgroundTransparency = 1,
+        Text               = "",
+        ZIndex             = 203,
+        Parent             = floatBtn,
+    })
+
+    -- Hover — subtle brightness lift + tooltip slide
     floatHit.MouseEnter:Connect(function()
-        U.Tw(floatBtn, TI.Fast, {BackgroundColor3=T.AccentLow})
-        U.Tw(floatGlow, TI.Fast, {BackgroundTransparency=0.65})
+        U.Tw(floatBtn, TI.Fast, {BackgroundColor3 = Color3.fromRGB(22, 22, 30)})
+        U.Tw(floatStroke, TI.Fast, {Color = T.Accent, Transparency = 0})
         floatTip.Visible = true
+        U.Tw(floatTip, TI.Med, {Size = UDim2.new(0, 90, 0, 24)})
     end)
     floatHit.MouseLeave:Connect(function()
-        U.Tw(floatBtn, TI.Fast, {BackgroundColor3=T.Surface})
-        U.Tw(floatGlow, TI.Fast, {BackgroundTransparency=0.82})
-        floatTip.Visible = false
+        U.Tw(floatBtn, TI.Fast, {BackgroundColor3 = Color3.fromRGB(14, 14, 18)})
+        U.Tw(floatStroke, TI.Fast, {Color = T.AccentMid, Transparency = 0.2})
+        U.Tw(floatTip, TI.Fast, {Size = UDim2.new(0, 0, 0, 24)})
+        task.delay(0.14, function() floatTip.Visible = false end)
+    end)
+    floatHit.MouseButton1Down:Connect(function()
+        U.Tw(floatBtn, TI.Fast, {BackgroundColor3 = T.AccentLow})
+    end)
+    floatHit.MouseButton1Up:Connect(function()
+        U.Tw(floatBtn, TI.Fast, {BackgroundColor3 = Color3.fromRGB(22, 22, 30)})
     end)
 
-    -- Make float icon draggable
-    U.Drag(floatBtn, floatBtn)
+    -- Keep shadow in sync when dragged
+    local function syncRing()
+        floatRing.Position = UDim2.new(
+            floatBtn.Position.X.Scale, floatBtn.Position.X.Offset - 8,
+            floatBtn.Position.Y.Scale, floatBtn.Position.Y.Offset - 8)
+    end
 
-    -- Pulse animation on float icon
+    -- Drag (icon + shadow move together)
+    do
+        local drag, s0, p0 = false, nil, nil
+        floatBtn.InputBegan:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then
+                drag = true; s0 = i.Position; p0 = floatBtn.Position
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(i)
+            if drag and i.UserInputType == Enum.UserInputType.MouseMovement then
+                local d = i.Position - s0
+                floatBtn.Position = UDim2.new(
+                    p0.X.Scale, p0.X.Offset + d.X,
+                    p0.Y.Scale, p0.Y.Offset + d.Y)
+                syncRing()
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = false end
+        end)
+    end
+
+    -- Subtle idle pulse on the N glow
     task.spawn(function()
         while floatBtn.Parent do
             if floatBtn.Visible then
-                U.Tw(floatGlow, TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                    {BackgroundTransparency = 0.65})
-                task.wait(0.9)
-                U.Tw(floatGlow, TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                    {BackgroundTransparency = 0.88})
-                task.wait(0.9)
+                U.Tw(nLeft,  TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                    {BackgroundTransparency = 0.5})
+                U.Tw(nRight, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                    {BackgroundTransparency = 0.5})
+                U.Tw(nDiag,  TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                    {BackgroundTransparency = 0.5})
+                task.wait(1.2)
+                U.Tw(nLeft,  TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                    {BackgroundTransparency = 0.05})
+                U.Tw(nRight, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                    {BackgroundTransparency = 0.05})
+                U.Tw(nDiag,  TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                    {BackgroundTransparency = 0.05})
+                task.wait(1.2)
             else
                 task.wait(0.5)
             end
@@ -945,17 +1036,22 @@ function NexusUI:CreateWindow(cfg)
     local function doMinimize()
         minimized = true
         hideMain(function()
-            -- Show float icon with bounce
-            floatBtn.Size    = UDim2.new(0, 0, 0, 0)
-            floatBtn.Visible = true
-            U.Tw(floatBtn, TI.Bounce, {Size = UDim2.new(0, 38, 0, 38)})
+            floatBtn.Position = UDim2.new(0, 16, 0, 16)
+            floatBtn.Size     = UDim2.new(0, 0, 0, 0)
+            floatBtn.Visible  = true
+            floatRing.Visible = true
+            syncRing()
+            U.Tw(floatBtn, TI.Bounce, {Size = UDim2.new(0, 54, 0, 54)})
         end)
     end
 
     local function doRestore()
         U.Tw(floatBtn, TI.Fast, {Size = UDim2.new(0, 0, 0, 0)})
-        task.delay(0.12, function()
-            floatBtn.Visible = false
+        U.Tw(floatRing, TI.Fast, {BackgroundTransparency = 1})
+        task.delay(0.14, function()
+            floatBtn.Visible  = false
+            floatRing.Visible = false
+            floatRing.BackgroundTransparency = 0.55
             showMain()
         end)
     end
@@ -967,7 +1063,8 @@ function NexusUI:CreateWindow(cfg)
     closeBtn.MouseButton1Click:Connect(function()
         visible   = false
         minimized = false
-        floatBtn.Visible = false
+        floatBtn.Visible  = false
+        floatRing.Visible = false
         U.Tw(win, TI.Med, {
             Size=UDim2.new(0,0,0,0),
             Position=UDim2.new(0.5,0,0.5,0),
@@ -978,6 +1075,7 @@ function NexusUI:CreateWindow(cfg)
             pcall(function() win:Destroy() end)
             pcall(function() shadow:Destroy() end)
             pcall(function() floatBtn:Destroy() end)
+            pcall(function() floatRing:Destroy() end)
         end)
     end)
 
@@ -1015,12 +1113,14 @@ function NexusUI:CreateWindow(cfg)
         local td = Themes[name]
         if not td then return end
         for k, v in pairs(td) do T[k] = v end
-        win.BackgroundColor3    = T.Bg
-        topbar.BackgroundColor3 = T.Surface
-        nav.BackgroundColor3    = T.Surface
+        win.BackgroundColor3       = T.Bg
+        topbar.BackgroundColor3    = T.Surface
+        nav.BackgroundColor3       = T.Surface
         logoBadge.BackgroundColor3 = T.AccentLow
         accentLine.BackgroundColor3 = T.Accent
-        floatGlow.BackgroundColor3  = T.Accent
+        floatRing.BackgroundColor3 = T.Accent
+        floatBtn.BackgroundColor3  = T.Surface
+        floatInner.BackgroundColor3 = T.AccentLow
         NexusUI.Notify(NexusUI, {
             Title="Theme", Text="Applied: "..name, Type="info", Duration=2
         })
@@ -1130,44 +1230,179 @@ function NexusUI:CreateWindow(cfg)
         table.insert(Window._Tabs, tab)
         if #Window._Tabs == 1 then task.spawn(activate) end
 
-        -- ── CreateSection ──────────────────────────────────────
-        function tab:CreateSection(secName)
-            local sec = {}
+        -- ── CreateSection  (collapsible) ──────────────────────
+        function tab:CreateSection(cfgOrName)
+            -- Accept either a string or a table  {Name="..."}
+            local secName
+            if type(cfgOrName) == "string" then
+                secName = cfgOrName
+            else
+                cfgOrName = cfgOrName or {}
+                secName   = cfgOrName.Name or "Section"
+            end
 
+            local sec         = {}
+            local isOpen      = true   -- starts expanded
+            local HEADER_H    = 26     -- fixed header height
+
+            -- ── Outer wrapper (AutomaticSize disabled — we control height manually)
             local sf = U.New("Frame", {
                 Name             = "Sec_"..secName,
-                Size             = UDim2.new(1, 0, 0, 0),
-                AutomaticSize    = Enum.AutomaticSize.Y,
+                Size             = UDim2.new(1, 0, 0, 0),  -- height set after build
                 BackgroundColor3 = T.Surface,
                 BackgroundTransparency = T.SurfAlpha,
                 BorderSizePixel  = 0,
+                ClipsDescendants = true,         -- clips body when collapsing
                 ZIndex           = 14,
                 Parent           = page,
             })
             U.Corner(8, sf)
             U.Stroke(1, T.Border, 0.38, sf)
-            U.Pad(8,8,8,8, sf)
-            local sl = U.List(5, sf)
 
-            -- Section header
-            local hf = U.New("Frame", {
-                Size=UDim2.new(1,0,0,18), BackgroundTransparency=1,
-                ZIndex=15, Parent=sf,
+            -- ── Clickable header row ─────────────────────────
+            local hdr = U.New("TextButton", {
+                Name             = "Header",
+                Size             = UDim2.new(1, 0, 0, HEADER_H),
+                BackgroundColor3 = T.SurfaceHi,
+                BackgroundTransparency = 0.35,
+                Text             = "",
+                AutoButtonColor  = false,
+                BorderSizePixel  = 0,
+                ZIndex           = 15,
+                Parent           = sf,
             })
+            -- Top-corner mask so header corners match sf
+            U.Corner(8, hdr)
+
+            -- Accent left bar on header
+            local hdrBar = U.New("Frame", {
+                Size             = UDim2.new(0, 2, 0.55, 0),
+                Position         = UDim2.new(0, 0, 0.225, 0),
+                BackgroundColor3 = T.Accent,
+                BackgroundTransparency = 0.3,
+                BorderSizePixel  = 0,
+                ZIndex           = 16,
+                Parent           = hdr,
+            })
+            U.Corner(2, hdrBar)
+
+            -- Section name label
             U.New("TextLabel", {
-                Size=UDim2.new(1,0,1,0), BackgroundTransparency=1,
-                Text=secName:upper(), TextColor3=T.TextDim,
-                TextSize=9, Font=Enum.Font.GothamBold,
-                TextXAlignment=Enum.TextXAlignment.Left, ZIndex=16, Parent=hf,
-            })
-            U.New("Frame", {
-                Size=UDim2.new(1,0,0,1), Position=UDim2.new(0,0,1,-1),
-                BackgroundColor3=T.Border, BackgroundTransparency=0.45,
-                BorderSizePixel=0, ZIndex=15, Parent=hf,
+                Size             = UDim2.new(1, -34, 1, 0),
+                Position         = UDim2.new(0, 10, 0, 0),
+                BackgroundTransparency = 1,
+                Text             = secName:upper(),
+                TextColor3       = T.TextSub,
+                TextSize         = 9,
+                Font             = Enum.Font.GothamBold,
+                TextXAlignment   = Enum.TextXAlignment.Left,
+                ZIndex           = 16,
+                Parent           = hdr,
             })
 
-            sec._Frame = sf
-            sec._List  = sl
+            -- Arrow chevron (rotates 180° when collapsed)
+            local arrow = U.New("TextLabel", {
+                Size             = UDim2.new(0, 20, 1, 0),
+                Position         = UDim2.new(1, -22, 0, 0),
+                BackgroundTransparency = 1,
+                Text             = "⌄",
+                TextColor3       = T.TextDim,
+                TextSize         = 13,
+                Font             = Enum.Font.GothamBold,
+                ZIndex           = 16,
+                Parent           = hdr,
+            })
+
+            -- Header separator line (shown when open)
+            local hdrLine = U.New("Frame", {
+                Size             = UDim2.new(1, 0, 0, 1),
+                Position         = UDim2.new(0, 0, 1, -1),
+                BackgroundColor3 = T.Border,
+                BackgroundTransparency = 0.45,
+                BorderSizePixel  = 0,
+                ZIndex           = 15,
+                Parent           = hdr,
+            })
+
+            -- ── Body container (items live here) ─────────────
+            local body = U.New("Frame", {
+                Name             = "Body",
+                Size             = UDim2.new(1, 0, 0, 0),   -- height auto below
+                Position         = UDim2.new(0, 0, 0, HEADER_H),
+                BackgroundTransparency = 1,
+                BorderSizePixel  = 0,
+                AutomaticSize    = Enum.AutomaticSize.Y,
+                ZIndex           = 15,
+                Parent           = sf,
+            })
+            U.Pad(6, 8, 8, 8, body)
+            local sl = U.List(5, body)
+
+            -- Compute and set sf height based on body content
+            local function recalcHeight()
+                local bodyH = body.AbsoluteSize.Y
+                sf.Size = UDim2.new(1, 0, 0, HEADER_H + (isOpen and bodyH or 0))
+            end
+
+            -- Body size changes → recompute wrapper
+            body:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                if isOpen then recalcHeight() end
+            end)
+
+            -- ── Toggle collapse ───────────────────────────────
+            local function setOpen(state, animate)
+                isOpen = state
+                local targetBodyH = isOpen and body.AbsoluteSize.Y or 0
+                local targetSfH   = HEADER_H + targetBodyH
+
+                if animate then
+                    -- Arrow rotates
+                    U.Tw(arrow, TI.Med, {Rotation = isOpen and 0 or -90})
+                    U.Tw(hdrBar, TI.Fast, {BackgroundTransparency = isOpen and 0.3 or 0.6})
+                    -- Smoothly resize the outer frame
+                    U.Tw(sf, TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+                        {Size = UDim2.new(1, 0, 0, targetSfH)})
+                    -- Fade separator
+                    U.Tw(hdrLine, TI.Fast, {BackgroundTransparency = isOpen and 0.45 or 1})
+                else
+                    arrow.Rotation = isOpen and 0 or -90
+                    sf.Size        = UDim2.new(1, 0, 0, targetSfH)
+                    hdrLine.BackgroundTransparency = isOpen and 0.45 or 1
+                end
+            end
+
+            -- Initial sizing (after a frame so AutomaticSize settles)
+            task.defer(function()
+                setOpen(true, false)
+            end)
+
+            -- Header hover effects
+            hdr.MouseEnter:Connect(function()
+                U.Tw(hdr, TI.Fast, {BackgroundTransparency = 0.20})
+                U.Tw(arrow, TI.Fast, {TextColor3 = T.Accent})
+            end)
+            hdr.MouseLeave:Connect(function()
+                U.Tw(hdr, TI.Fast, {BackgroundTransparency = 0.35})
+                U.Tw(arrow, TI.Fast, {TextColor3 = T.TextDim})
+            end)
+            hdr.MouseButton1Down:Connect(function()
+                U.Tw(hdr, TI.Fast, {BackgroundColor3 = T.AccentLow, BackgroundTransparency = 0})
+            end)
+            hdr.MouseButton1Up:Connect(function()
+                U.Tw(hdr, TI.Fast, {BackgroundColor3 = T.SurfaceHi, BackgroundTransparency = 0.20})
+            end)
+            hdr.MouseButton1Click:Connect(function()
+                setOpen(not isOpen, true)
+            end)
+
+            sec._Frame  = sf
+            sec._Body   = body
+            sec._List   = sl
+
+            -- Public collapse/expand API
+            function sec:Collapse() setOpen(false, true) end
+            function sec:Expand()   setOpen(true,  true) end
+            function sec:Toggle()   setOpen(not isOpen, true) end
 
             -- ────────────────────────────────────────────────
             --  SEPARATOR
@@ -1176,7 +1411,7 @@ function NexusUI:CreateWindow(cfg)
                 U.New("Frame", {
                     Size=UDim2.new(1,0,0,1),
                     BackgroundColor3=T.Border, BackgroundTransparency=0.45,
-                    BorderSizePixel=0, ZIndex=15, Parent=sf,
+                    BorderSizePixel=0, ZIndex=15, Parent=body,
                 })
             end
 
@@ -1190,7 +1425,7 @@ function NexusUI:CreateWindow(cfg)
                     BackgroundTransparency=1, Text=c2.Text or "Label",
                     TextColor3=c2.Color or T.TextSub, TextSize=c2.Size or 11,
                     Font=Enum.Font.Gotham, TextXAlignment=Enum.TextXAlignment.Left,
-                    TextWrapped=true, ZIndex=15, Parent=sf,
+                    TextWrapped=true, ZIndex=15, Parent=body,
                 })
                 local api = {}
                 function api:Set(t2) l.Text = t2 end
@@ -1208,7 +1443,7 @@ function NexusUI:CreateWindow(cfg)
                 local row = U.New("Frame", {
                     Size=UDim2.new(1,0,0,30),
                     BackgroundColor3=T.SurfaceHi, BackgroundTransparency=0.25,
-                    BorderSizePixel=0, ZIndex=15, Parent=sf,
+                    BorderSizePixel=0, ZIndex=15, Parent=body,
                 })
                 U.Corner(6, row)
                 U.Stroke(1, T.Border, 0.50, row)
@@ -1273,7 +1508,7 @@ function NexusUI:CreateWindow(cfg)
                 local row = U.New("Frame", {
                     Size=UDim2.new(1,0,0,30),
                     BackgroundColor3=T.SurfaceHi, BackgroundTransparency=0.25,
-                    BorderSizePixel=0, ZIndex=15, Parent=sf,
+                    BorderSizePixel=0, ZIndex=15, Parent=body,
                 })
                 U.Corner(6, row)
                 U.Stroke(1, T.Border, 0.50, row)
@@ -1361,7 +1596,7 @@ function NexusUI:CreateWindow(cfg)
                 local wrap = U.New("Frame", {
                     Size=UDim2.new(1,0,0,44),
                     BackgroundColor3=T.SurfaceHi, BackgroundTransparency=0.25,
-                    BorderSizePixel=0, ZIndex=15, Parent=sf,
+                    BorderSizePixel=0, ZIndex=15, Parent=body,
                 })
                 U.Corner(6, wrap)
                 U.Stroke(1, T.Border, 0.50, wrap)
@@ -1485,7 +1720,7 @@ function NexusUI:CreateWindow(cfg)
                 local wrap = U.New("Frame", {
                     Size=UDim2.new(1,0,0,30),
                     BackgroundTransparency=1, ZIndex=20,
-                    ClipsDescendants=false, Parent=sf,
+                    ClipsDescendants=false, Parent=body,
                 })
 
                 local row = U.New("Frame", {
@@ -1610,7 +1845,7 @@ function NexusUI:CreateWindow(cfg)
                 local wrap = U.New("Frame", {
                     Size=UDim2.new(1,0,0,44),
                     BackgroundColor3=T.SurfaceHi, BackgroundTransparency=0.25,
-                    BorderSizePixel=0, ZIndex=15, Parent=sf,
+                    BorderSizePixel=0, ZIndex=15, Parent=body,
                 })
                 U.Corner(6, wrap)
                 U.Stroke(1, T.Border, 0.50, wrap)
@@ -1667,7 +1902,7 @@ function NexusUI:CreateWindow(cfg)
                 local row = U.New("Frame", {
                     Size=UDim2.new(1,0,0,30),
                     BackgroundColor3=T.SurfaceHi, BackgroundTransparency=0.25,
-                    BorderSizePixel=0, ZIndex=15, Parent=sf,
+                    BorderSizePixel=0, ZIndex=15, Parent=body,
                 })
                 U.Corner(6, row)
                 U.Stroke(1, T.Border, 0.50, row)
@@ -1733,7 +1968,7 @@ function NexusUI:CreateWindow(cfg)
                 local row = U.New("Frame", {
                     Size=UDim2.new(1,0,0,30),
                     BackgroundColor3=T.SurfaceHi, BackgroundTransparency=0.25,
-                    BorderSizePixel=0, ZIndex=15, Parent=sf,
+                    BorderSizePixel=0, ZIndex=15, Parent=body,
                 })
                 U.Corner(6, row)
                 U.Stroke(1, T.Border, 0.50, row)
@@ -1784,7 +2019,7 @@ function NexusUI:CreateWindow(cfg)
                 local row = U.New("Frame", {
                     Size=UDim2.new(1,0,0,30),
                     BackgroundColor3=T.SurfaceHi, BackgroundTransparency=0.25,
-                    BorderSizePixel=0, ZIndex=15, Parent=sf,
+                    BorderSizePixel=0, ZIndex=15, Parent=body,
                 })
                 U.Corner(6, row)
                 U.Stroke(1, T.Border, 0.50, row)
