@@ -732,7 +732,7 @@ function NexusUI:CreateWindow(cfg)
             AutoButtonColor    = false,
             BorderSizePixel    = 0,
             ZIndex             = 30,     -- above everything
-            Parent             = win,    -- parent to win, NOT topbar
+            Parent             = topbar,    -- parent to win, NOT topbar
         })
         U.Corner(5, btn)
         local lbl = U.New("TextLabel", {
@@ -944,34 +944,73 @@ function NexusUI:CreateWindow(cfg)
         U.Tw(floatBtn, TI.Fast, {BackgroundColor3 = Color3.fromRGB(22, 22, 30)})
     end)
 
-    -- Keep shadow in sync when dragged
-    local function syncRing()
+-- Keep shadow in sync when dragged
+local function syncRing()
+    if floatRing and floatRing.Parent then
         floatRing.Position = UDim2.new(
             floatBtn.Position.X.Scale, floatBtn.Position.X.Offset - 8,
             floatBtn.Position.Y.Scale, floatBtn.Position.Y.Offset - 8)
     end
+end
 
-    -- Drag (icon + shadow move together)
-    do
-        local drag, s0, p0 = false, nil, nil
-        floatBtn.InputBegan:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1 then
-                drag = true; s0 = i.Position; p0 = floatBtn.Position
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(i)
-            if drag and i.UserInputType == Enum.UserInputType.MouseMovement then
-                local d = i.Position - s0
-                floatBtn.Position = UDim2.new(
-                    p0.X.Scale, p0.X.Offset + d.X,
-                    p0.Y.Scale, p0.Y.Offset + d.Y)
-                syncRing()
-            end
-        end)
-        UserInputService.InputEnded:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = false end
-        end)
+-- FIX: Icon floating sekarang bisa di-drag dengan mulus
+do
+    local dragging = false
+    local dragStart = nil
+    local iconStartPos = nil
+    
+    -- Gunakan floatHit (tombol) sebagai handle drag (lebih responsif)
+    floatHit.MouseButton1Down:Connect(function(input)
+        dragging = true
+        dragStart = input.Position
+        iconStartPos = floatBtn.Position
+    end)
+    
+    -- InputChanged untuk drag yang mulus (mengikuti cursor)
+    local dragConnection
+    dragConnection = UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            -- Hitung pergerakan mouse
+            local delta = input.Position - dragStart
+            
+            -- Update posisi icon
+            floatBtn.Position = UDim2.new(
+                iconStartPos.X.Scale, 
+                iconStartPos.X.Offset + delta.X,
+                iconStartPos.Y.Scale, 
+                iconStartPos.Y.Offset + delta.Y
+            )
+            
+            -- Update posisi shadow
+            syncRing()
+        end
+    end)
+    
+    -- Fungsi untuk berhenti drag
+    local function stopDrag()
+        if dragging then
+            dragging = false
+            iconStartPos = floatBtn.Position -- Simpan posisi terakhir
+        end
     end
+    
+    -- Lepaskan mouse = berhenti drag
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            stopDrag()
+        end
+    end)
+    
+    -- Juga berhenti kalau tombol dilepas
+    floatHit.MouseButton1Up:Connect(stopDrag)
+    
+    -- Bersihkan connection kalau icon dihapus
+    floatBtn.AncestryChanged:Connect(function()
+        if dragConnection then
+            dragConnection:Disconnect()
+        end
+    end)
+end
 
     -- Subtle idle pulse on the N glow
     task.spawn(function()
