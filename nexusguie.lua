@@ -129,15 +129,22 @@ function NateiraHub:Window(cfg)
     cfg = cfg or {}
     local Title    = cfg.Title    or "Nateira Hub"
     local SubTitle = cfg.SubTitle or "v3.0"
-    local W        = cfg.Width    or 680
-    local H        = cfg.Height   or 470
     local SW       = 185  -- sidebar width (fixed, matching reference)
+
+    -- Auto-scale window to fit screen with safe margins
+    local vp  = workspace.CurrentCamera.ViewportSize
+    local W   = cfg.Width  or math.min(640, vp.X - 40)
+    local H   = cfg.Height or math.min(440, vp.Y - 80)
+
+    -- Safe centered position — never clips top (min Y = 40px from top)
+    local startX = math.floor((vp.X - W) / 2)
+    local startY = math.max(40, math.floor((vp.Y - H) / 2))
 
     -- ─── Root window ────────────────────────────────────────────────
     local Root = Make("Frame", {
         Name             = "Root",
         Size             = UDim2.new(0, W, 0, H),
-        Position         = UDim2.new(0.5, -W/2, 0.5, -H/2),
+        Position         = UDim2.new(0, startX, 0, startY),
         BackgroundColor3 = C.WinBG,
         BorderSizePixel  = 0,
         ClipsDescendants = false,
@@ -286,28 +293,37 @@ function NateiraHub:Window(cfg)
         ZIndex           = 12,
     }, ContentBG)
 
-    -- ─── DRAG (fixed with AbsolutePosition) ──────────────────────────
-    local dragging       = false
-    local dragMStart     = Vector2.new()
-    local dragRStart     = Vector2.new()
+    -- ─── DRAG  (Mouse + Touch support) ──────────────────────────────
+    local dragging   = false
+    local dragMStart = Vector2.new()
+    local dragRStart = Vector2.new()
+
+    local function isDragInput(t)
+        return t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch
+    end
+    local function isMoveInput(t)
+        return t == Enum.UserInputType.MouseMovement or t == Enum.UserInputType.Touch
+    end
 
     Header.InputBegan:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+        if isDragInput(inp.UserInputType) then
             dragging   = true
             dragMStart = Vector2.new(inp.Position.X, inp.Position.Y)
             dragRStart = Vector2.new(Root.AbsolutePosition.X, Root.AbsolutePosition.Y)
         end
     end)
     UserInputService.InputChanged:Connect(function(inp)
-        if dragging and inp.UserInputType == Enum.UserInputType.MouseMovement then
-            local d = Vector2.new(inp.Position.X, inp.Position.Y) - dragMStart
-            Root.Position = UDim2.new(0, dragRStart.X + d.X, 0, dragRStart.Y + d.Y)
+        if dragging and isMoveInput(inp.UserInputType) then
+            local d  = Vector2.new(inp.Position.X, inp.Position.Y) - dragMStart
+            local vp = workspace.CurrentCamera.ViewportSize
+            -- clamp: header can never go above Y=0, never fully off sides
+            local nx = math.clamp(dragRStart.X + d.X, -(W - 80), vp.X - 80)
+            local ny = math.clamp(dragRStart.Y + d.Y, 0, vp.Y - 60)
+            Root.Position = UDim2.new(0, nx, 0, ny)
         end
     end)
     UserInputService.InputEnded:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
+        if isDragInput(inp.UserInputType) then dragging = false end
     end)
 
     -- ─── Minimize bar ────────────────────────────────────────────────
