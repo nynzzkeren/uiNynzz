@@ -1,7 +1,6 @@
 --// ============================================================================
---//  VoraHub UI Library
---//  Refactored Monochrome Cyber-Stealth Edition
---//  Layout: Hierarchical Categories → Sub-Tabs → Left/Right Card Sections
+--//  VoraHub UI Library — Monochrome Cyber-Stealth Edition
+--//  Refactored: Hierarchical Categories → Sub-Tabs → Left/Right Card Grid
 --// ============================================================================
 
 local HttpService = game:GetService("HttpService")
@@ -14,30 +13,27 @@ local CoreGui = game:GetService("CoreGui")
 local viewport = workspace.CurrentCamera.ViewportSize
 
 --// ========================== THEME CONFIGURATION =============================
---//  Toggle AccentColor between white-gray monochrome or neon blue instantly
+--//  Ganti AccentColor ke Color3.fromRGB(0, 170, 255) untuk Neon Blue
 local Theme = {
-	AccentColor     = Color3.fromRGB(255, 255, 255), -- Switch to Color3.fromRGB(0, 170, 255) for neon blue
-	UseNeonAccent   = false,                         -- Set true to force neon blue accent
+	AccentColor     = Color3.fromRGB(0, 170, 255),   -- Neon Blue (sesuai gambar)
+	-- AccentColor  = Color3.fromRGB(255,255,255),   -- Uncomment untuk White-Gray
 
-	MainBG          = Color3.fromRGB(13, 13, 13),
-	CardBG          = Color3.fromRGB(22, 22, 22),
+	MainBG          = Color3.fromRGB(10, 10, 12),    -- Ultra dark charcoal
+	SidebarBG       = Color3.fromRGB(14, 14, 16),    -- Sidebar sedikit lebih terang dari MainBG
+	CardBG          = Color3.fromRGB(22, 22, 26),    -- Card/Groupbox background
 	HeaderText      = Color3.fromRGB(255, 255, 255),
-	SecondaryText   = Color3.fromRGB(180, 180, 180),
-	Border          = Color3.fromRGB(35, 35, 35),
-	SidebarBG       = Color3.fromRGB(16, 16, 16),
-	ToggleOff       = Color3.fromRGB(55, 55, 55),
+	SecondaryText   = Color3.fromRGB(160, 160, 170),
+	Border          = Color3.fromRGB(40, 40, 48),
+	SearchBG        = Color3.fromRGB(30, 30, 34),
+	ToggleOff       = Color3.fromRGB(55, 55, 62),
+	ToggleOn        = Color3.fromRGB(0, 170, 255),
 	ToggleCircle    = Color3.fromRGB(255, 255, 255),
-	SliderTrack     = Color3.fromRGB(45, 45, 45),
-	PillHighlight   = Color3.fromRGB(35, 35, 35),
-	SearchBG        = Color3.fromRGB(30, 30, 30),
-	HoverBright     = Color3.fromRGB(40, 40, 40),
+	SliderTrack     = Color3.fromRGB(45, 45, 52),
+	PillHighlight   = Color3.fromRGB(0, 140, 255),   -- Active tab pill blue
+	HoverBright     = Color3.fromRGB(35, 35, 42),
 	Font            = Enum.Font.Gotham,
 	FontBold        = Enum.Font.GothamBold,
 }
-
-if Theme.UseNeonAccent then
-	Theme.AccentColor = Color3.fromRGB(0, 170, 255)
-end
 
 --// ========================== CONFIG PERSISTENCE ==============================
 if not isfolder("VoraHub") then makefolder("VoraHub") end
@@ -55,7 +51,9 @@ local CURRENT_VERSION = nil
 local function SaveConfig()
 	if writefile then
 		ConfigData._version = CURRENT_VERSION
-		writefile(ConfigFile, HttpService:JSONEncode(ConfigData))
+		pcall(function()
+			writefile(ConfigFile, HttpService:JSONEncode(ConfigData))
+		end)
 	end
 end
 
@@ -143,16 +141,16 @@ end
 
 local function MakeResizable(object)
 	local Dragging, DragInput, DragStart, StartSize
-	local minSizeX, minSizeY = 100, 100
-	local defSizeX, defSizeY = isMobile and 470 or 780, isMobile and 270 or 500
+	local minSizeX, minSizeY = 500, 320
+	local defSizeX, defSizeY = isMobile and 470 or 860, isMobile and 270 or 520
 	object.Size = UDim2.new(0, defSizeX, 0, defSizeY)
 
 	local handle = Instance.new("Frame")
+	handle.Name = "ResizeHandle"
 	handle.AnchorPoint = Vector2.new(1, 1)
 	handle.BackgroundTransparency = 1
 	handle.Size = UDim2.new(0, 40, 0, 40)
 	handle.Position = UDim2.new(1, 20, 1, 20)
-	handle.Name = "ResizeHandle"
 	handle.Parent = object
 
 	local function UpdateSize(input)
@@ -347,7 +345,7 @@ end
 --// ========================== MAIN WINDOW =====================================
 function VoraHub:Window(GuiConfig)
 	GuiConfig = GuiConfig or {}
-	GuiConfig.Title = GuiConfig.Title or "VoraHub Style"
+	GuiConfig.Title = GuiConfig.Title or "VoraHub"
 	GuiConfig.Footer = GuiConfig.Footer or ""
 	GuiConfig.Color = GuiConfig.Color or Theme.AccentColor
 	GuiConfig.Version = GuiConfig.Version or 1
@@ -358,13 +356,13 @@ function VoraHub:Window(GuiConfig)
 
 	if GuiConfig.Color then
 		Theme.AccentColor = GuiConfig.Color
+		Theme.ToggleOn = GuiConfig.Color
+		Theme.PillHighlight = GuiConfig.Color
 	end
 
 	local GuiFunc = {}
 	local AllCategories = {}
-	local AllTabs = {}
 	local ActiveTab = nil
-	local ActiveDropdownFrame = nil
 	local TabCount = 0
 
 	--// Root GUI
@@ -375,40 +373,42 @@ function VoraHub:Window(GuiConfig)
 	NatUI.Parent = CoreGui
 
 	local MainHolder = Instance.new("Frame")
+	MainHolder.Name = "MainHolder"
 	MainHolder.AnchorPoint = Vector2.new(0.5, 0.5)
 	MainHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
-	MainHolder.Size = safeSize(isMobile and 470 or 780, isMobile and 270 or 500)
+	MainHolder.Size = safeSize(isMobile and 470 or 860, isMobile and 270 or 520)
 	MainHolder.BackgroundTransparency = 1
 	MainHolder.BorderSizePixel = 0
-	MainHolder.Name = "MainHolder"
-	MainUI.Parent = NatUI
+	MainHolder.Parent = NatUI
 
 	local Main = Instance.new("Frame")
+	Main.Name = "Main"
 	Main.BackgroundColor3 = Theme.MainBG
 	Main.BorderSizePixel = 0
 	Main.Size = UDim2.new(1, 0, 1, 0)
-	Main.Name = "Main"
 	Main.Parent = MainHolder
 	Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
 
 	--// Top Bar
 	local TopBar = Instance.new("Frame")
+	TopBar.Name = "TopBar"
 	TopBar.BackgroundColor3 = Theme.MainBG
 	TopBar.BorderSizePixel = 0
 	TopBar.Size = UDim2.new(1, 0, 0, 48)
-	TopBar.Name = "TopBar"
 	TopBar.Parent = Main
 	Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
 
 	local TopBarDeco = Instance.new("Frame")
+	TopBarDeco.Name = "TopBarDeco"
 	TopBarDeco.BackgroundColor3 = Theme.Border
 	TopBarDeco.BorderSizePixel = 0
 	TopBarDeco.Position = UDim2.new(0, 0, 1, -1)
 	TopBarDeco.Size = UDim2.new(1, 0, 0, 1)
 	TopBarDeco.Parent = TopBar
 
-	-- App Name
+	-- App Name (Left)
 	local AppName = Instance.new("TextLabel")
+	AppName.Name = "AppName"
 	AppName.Font = Theme.FontBold
 	AppName.Text = GuiConfig.Title
 	AppName.TextColor3 = Theme.HeaderText
@@ -419,16 +419,18 @@ function VoraHub:Window(GuiConfig)
 	AppName.Size = UDim2.new(0, 200, 1, 0)
 	AppName.Parent = TopBar
 
-	-- Player Avatar
+	-- Player Avatar (beside title)
 	local AvatarHolder = Instance.new("Frame")
+	AvatarHolder.Name = "AvatarHolder"
 	AvatarHolder.BackgroundColor3 = Theme.CardBG
 	AvatarHolder.BorderSizePixel = 0
-	AvatarHolder.Position = UDim2.new(0, AppName.TextBounds.X + 20, 0.5, -14)
-	AvatarHolder.Size = UDim2.new(0, 28, 0, 28)
+	AvatarHolder.Position = UDim2.new(0, AppName.TextBounds.X + 22, 0.5, -13)
+	AvatarHolder.Size = UDim2.new(0, 26, 0, 26)
 	AvatarHolder.Parent = TopBar
 	Instance.new("UICorner", AvatarHolder).CornerRadius = UDim.new(1, 0)
 
 	local AvatarImg = Instance.new("ImageLabel")
+	AvatarImg.Name = "AvatarImg"
 	AvatarImg.BackgroundTransparency = 1
 	AvatarImg.Size = UDim2.new(1, 0, 1, 0)
 	AvatarImg.Parent = AvatarHolder
@@ -437,8 +439,22 @@ function VoraHub:Window(GuiConfig)
 	end)
 	if success then AvatarImg.Image = thumb end
 
-	-- Search Bar
+	-- Current Tab Title (Center)
+	local CurrentTabTitle = Instance.new("TextLabel")
+	CurrentTabTitle.Name = "CurrentTabTitle"
+	CurrentTabTitle.Font = Theme.FontBold
+	CurrentTabTitle.Text = ""
+	CurrentTabTitle.TextColor3 = Theme.HeaderText
+	CurrentTabTitle.TextSize = 14
+	CurrentTabTitle.TextXAlignment = Enum.TextXAlignment.Left
+	CurrentTabTitle.BackgroundTransparency = 1
+	CurrentTabTitle.Position = UDim2.new(0, 220, 0, 0)
+	CurrentTabTitle.Size = UDim2.new(0, 200, 1, 0)
+	CurrentTabTitle.Parent = TopBar
+
+	-- Search Bar (Right)
 	local SearchFrame = Instance.new("Frame")
+	SearchFrame.Name = "SearchFrame"
 	SearchFrame.AnchorPoint = Vector2.new(1, 0.5)
 	SearchFrame.BackgroundColor3 = Theme.SearchBG
 	SearchFrame.BorderSizePixel = 0
@@ -448,6 +464,7 @@ function VoraHub:Window(GuiConfig)
 	Instance.new("UICorner", SearchFrame).CornerRadius = UDim.new(0, 6)
 
 	local SearchIcon = Instance.new("ImageLabel")
+	SearchIcon.Name = "SearchIcon"
 	SearchIcon.Image = "rbxassetid://122032243989747"
 	SearchIcon.BackgroundTransparency = 1
 	SearchIcon.Position = UDim2.new(0, 8, 0.5, -8)
@@ -456,6 +473,7 @@ function VoraHub:Window(GuiConfig)
 	SearchIcon.Parent = SearchFrame
 
 	local SearchBox = Instance.new("TextBox")
+	SearchBox.Name = "SearchBox"
 	SearchBox.Font = Theme.Font
 	SearchBox.PlaceholderText = "Search tabs/groups..."
 	SearchBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
@@ -471,6 +489,7 @@ function VoraHub:Window(GuiConfig)
 
 	-- Window Controls
 	local CloseBtn = Instance.new("TextButton")
+	CloseBtn.Name = "CloseBtn"
 	CloseBtn.Text = ""
 	CloseBtn.AnchorPoint = Vector2.new(1, 0.5)
 	CloseBtn.BackgroundTransparency = 1
@@ -488,6 +507,7 @@ function VoraHub:Window(GuiConfig)
 	CloseImg.Parent = CloseBtn
 
 	local MinBtn = Instance.new("TextButton")
+	MinBtn.Name = "MinBtn"
 	MinBtn.Text = ""
 	MinBtn.AnchorPoint = Vector2.new(1, 0.5)
 	MinBtn.BackgroundTransparency = 1
@@ -506,14 +526,24 @@ function VoraHub:Window(GuiConfig)
 
 	--// Sidebar
 	local Sidebar = Instance.new("Frame")
+	Sidebar.Name = "Sidebar"
 	Sidebar.BackgroundColor3 = Theme.SidebarBG
 	Sidebar.BorderSizePixel = 0
 	Sidebar.Position = UDim2.new(0, 0, 0, 48)
-	Sidebar.Size = UDim2.new(0, 200, 1, -48)
-	Sidebar.Name = "Sidebar"
+	Sidebar.Size = UDim2.new(0, 210, 1, -48)
 	Sidebar.Parent = Main
+	Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 0)
+
+	local SidebarDeco = Instance.new("Frame")
+	SidebarDeco.Name = "SidebarDeco"
+	SidebarDeco.BackgroundColor3 = Theme.Border
+	SidebarDeco.BorderSizePixel = 0
+	SidebarDeco.Position = UDim2.new(1, 0, 0, 0)
+	SidebarDeco.Size = UDim2.new(0, 1, 1, 0)
+	SidebarDeco.Parent = Sidebar
 
 	local SidebarScroll = Instance.new("ScrollingFrame")
+	SidebarScroll.Name = "SidebarScroll"
 	SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 	SidebarScroll.ScrollBarImageTransparency = 1
 	SidebarScroll.ScrollBarThickness = 0
@@ -521,64 +551,66 @@ function VoraHub:Window(GuiConfig)
 	SidebarScroll.BackgroundTransparency = 1
 	SidebarScroll.BorderSizePixel = 0
 	SidebarScroll.Size = UDim2.new(1, 0, 1, 0)
-	SidebarScroll.Name = "SidebarScroll"
 	SidebarScroll.Parent = Sidebar
 	SidebarScroll.ClipsDescendants = true
 
 	local SidebarList = Instance.new("UIListLayout")
-	SidebarList.Padding = UDim.new(0, 4)
+	SidebarList.Name = "SidebarList"
+	SidebarList.Padding = UDim.new(0, 6)
 	SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
 	SidebarList.Parent = SidebarScroll
 
 	SidebarList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, SidebarList.AbsoluteContentSize.Y + 10)
+		SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, SidebarList.AbsoluteContentSize.Y + 20)
 	end)
 
 	--// Content Area
 	local ContentArea = Instance.new("Frame")
+	ContentArea.Name = "ContentArea"
 	ContentArea.BackgroundTransparency = 1
 	ContentArea.BorderSizePixel = 0
-	ContentArea.Position = UDim2.new(0, 200, 0, 48)
-	ContentArea.Size = UDim2.new(1, -200, 1, -48)
-	ContentArea.Name = "ContentArea"
+	ContentArea.Position = UDim2.new(0, 210, 0, 48)
+	ContentArea.Size = UDim2.new(1, -210, 1, -48)
 	ContentArea.Parent = Main
 
 	local ContentScroll = Instance.new("ScrollingFrame")
+	ContentScroll.Name = "ContentScroll"
 	ContentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	ContentScroll.ScrollBarImageTransparency = 1
-	ContentScroll.ScrollBarThickness = 2
+	ContentScroll.ScrollBarImageTransparency = 0.9
+	ContentScroll.ScrollBarThickness = 3
 	ContentScroll.ScrollBarImageColor3 = Theme.Border
 	ContentScroll.Active = true
 	ContentScroll.BackgroundTransparency = 1
 	ContentScroll.BorderSizePixel = 0
 	ContentScroll.Size = UDim2.new(1, 0, 1, 0)
-	ContentScroll.Name = "ContentScroll"
 	ContentScroll.Parent = ContentArea
 	ContentScroll.ClipsDescendants = true
 
 	local ContentPageLayout = Instance.new("UIPageLayout")
-	ContentPageLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	ContentPageLayout.Name = "ContentPageLayout"
+	ContentPageLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	ContentPageLayout.Parent = ContentScroll
 	ContentPageLayout.TweenTime = 0.3
 	ContentPageLayout.EasingDirection = Enum.EasingDirection.InOut
 	ContentPageLayout.EasingStyle = Enum.EasingStyle.Quad
 	ContentPageLayout.FillDirection = Enum.FillDirection.Vertical
 
-	--// Dropdown Overlay (renders above all tabs, prevents clipping)
+	--// Dropdown Overlay (ZIndex 100, renders above everything)
 	local DropdownOverlay = Instance.new("Frame")
+	DropdownOverlay.Name = "DropdownOverlay"
 	DropdownOverlay.BackgroundTransparency = 1
 	DropdownOverlay.BorderSizePixel = 0
 	DropdownOverlay.Size = UDim2.new(1, 0, 1, 0)
 	DropdownOverlay.ZIndex = 100
 	DropdownOverlay.Visible = false
-	DropdownOverlay.Name = "DropdownOverlay"
 	DropdownOverlay.Parent = ContentArea
+
+	local ActiveDropdownFrame = nil
 
 	local function CloseActiveDropdown()
 		DropdownOverlay.Visible = false
 		ActiveDropdownFrame = nil
-		for _, child in DropdownOverlay:GetChildren() do
+		for _, child in ipairs(DropdownOverlay:GetChildren()) do
 			child:Destroy()
 		end
 	end
@@ -610,10 +642,10 @@ function VoraHub:Window(GuiConfig)
 	--// Search Logic
 	local function UpdateSearch()
 		local query = string.lower(SearchBox.Text)
-		for _, catData in pairs(AllCategories) do
+		for _, catData in ipairs(AllCategories) do
 			local catMatch = string.find(string.lower(catData.Name), query, 1, true)
 			local anyTabMatch = false
-			for _, tabData in pairs(catData.Tabs) do
+			for _, tabData in ipairs(catData.Tabs) do
 				local tabMatch = string.find(string.lower(tabData.Name), query, 1, true)
 				if query == "" or catMatch or tabMatch then
 					tabData.Button.Visible = true
@@ -635,7 +667,7 @@ function VoraHub:Window(GuiConfig)
 			end
 		end
 		task.wait()
-		SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, SidebarList.AbsoluteContentSize.Y + 10)
+		SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, SidebarList.AbsoluteContentSize.Y + 20)
 	end
 	SearchBox:GetPropertyChangedSignal("Text"):Connect(UpdateSearch)
 
@@ -652,6 +684,7 @@ function VoraHub:Window(GuiConfig)
 
 	CloseBtn.Activated:Connect(function()
 		local Overlay = Instance.new("Frame")
+		Overlay.Name = "Overlay"
 		Overlay.Size = UDim2.new(1, 0, 1, 0)
 		Overlay.BackgroundColor3 = Color3.new(0, 0, 0)
 		Overlay.BackgroundTransparency = 0.4
@@ -659,6 +692,7 @@ function VoraHub:Window(GuiConfig)
 		Overlay.Parent = MainHolder
 
 		local Dialog = Instance.new("Frame")
+		Dialog.Name = "Dialog"
 		Dialog.BackgroundColor3 = Theme.CardBG
 		Dialog.BorderSizePixel = 0
 		Dialog.Position = UDim2.new(0.5, -150, 0.5, -75)
@@ -673,6 +707,7 @@ function VoraHub:Window(GuiConfig)
 		DialogStroke.Parent = Dialog
 
 		local DTitle = Instance.new("TextLabel")
+		DTitle.Name = "DTitle"
 		DTitle.Font = Theme.FontBold
 		DTitle.Text = "Close VoraHub?"
 		DTitle.TextColor3 = Theme.HeaderText
@@ -684,6 +719,7 @@ function VoraHub:Window(GuiConfig)
 		DTitle.Parent = Dialog
 
 		local DMsg = Instance.new("TextLabel")
+		DMsg.Name = "DMsg"
 		DMsg.Font = Theme.Font
 		DMsg.Text = "Do you want to close this window?\nYou will not be able to open it again."
 		DMsg.TextColor3 = Theme.SecondaryText
@@ -696,6 +732,7 @@ function VoraHub:Window(GuiConfig)
 		DMsg.Parent = Dialog
 
 		local Yes = Instance.new("TextButton")
+		Yes.Name = "Yes"
 		Yes.Size = UDim2.new(0.45, -10, 0, 32)
 		Yes.Position = UDim2.new(0.05, 0, 1, -50)
 		Yes.BackgroundColor3 = Theme.CardBG
@@ -712,6 +749,7 @@ function VoraHub:Window(GuiConfig)
 		YesStroke.Parent = Yes
 
 		local Cancel = Instance.new("TextButton")
+		Cancel.Name = "Cancel"
 		Cancel.Size = UDim2.new(0.45, -10, 0, 32)
 		Cancel.Position = UDim2.new(0.5, 10, 1, -50)
 		Cancel.BackgroundColor3 = Theme.AccentColor
@@ -745,6 +783,7 @@ function VoraHub:Window(GuiConfig)
 		ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 		local MainButton = Instance.new("ImageLabel")
+		MainButton.Name = "MainButton"
 		MainButton.Parent = ScreenGui
 		MainButton.Size = UDim2.new(0, 50, 0, 50)
 		MainButton.Position = UDim2.new(0, 20, 0, 100)
@@ -754,6 +793,7 @@ function VoraHub:Window(GuiConfig)
 		Instance.new("UICorner", MainButton).CornerRadius = UDim.new(0, 10)
 
 		local Button = Instance.new("TextButton")
+		Button.Name = "Button"
 		Button.Parent = MainButton
 		Button.Size = UDim2.new(1, 0, 1, 0)
 		Button.BackgroundTransparency = 1
@@ -793,8 +833,6 @@ function VoraHub:Window(GuiConfig)
 	MakeResizable(MainHolder)
 
 	--// ===================== CATEGORY & TAB SYSTEM ==========================
-	local Categories = {}
-
 	function GuiFunc:AddCategory(CatConfig)
 		CatConfig = CatConfig or {}
 		CatConfig.Name = CatConfig.Name or "Category"
@@ -810,32 +848,24 @@ function VoraHub:Window(GuiConfig)
 
 		-- Category Header
 		local Header = Instance.new("Frame")
-		Header.BackgroundTransparency = 1
-		Header.Size = UDim2.new(1, -10, 0, 32)
-		Header.LayoutOrder = CatConfig.LayoutOrder * 100
 		Header.Name = "CategoryHeader_" .. CatConfig.Name
+		Header.BackgroundTransparency = 1
+		Header.Size = UDim2.new(1, -16, 0, 32)
+		Header.LayoutOrder = CatConfig.LayoutOrder * 100
 		Header.Parent = SidebarScroll
 
 		local HeaderBtn = Instance.new("TextButton")
+		HeaderBtn.Name = "HeaderBtn"
 		HeaderBtn.Text = ""
 		HeaderBtn.BackgroundTransparency = 1
 		HeaderBtn.Size = UDim2.new(1, 0, 1, 0)
 		HeaderBtn.Parent = Header
 
-		local Arrow = Instance.new("TextLabel")
-		Arrow.Text = "›"
-		Arrow.Font = Theme.FontBold
-		Arrow.TextSize = 16
-		Arrow.TextColor3 = Theme.SecondaryText
-		Arrow.BackgroundTransparency = 1
-		Arrow.Position = UDim2.new(0, 8, 0.5, -9)
-		Arrow.Size = UDim2.new(0, 14, 0, 18)
-		Arrow.Parent = Header
-
 		local CatIcon = Instance.new("ImageLabel")
+		CatIcon.Name = "CatIcon"
 		CatIcon.BackgroundTransparency = 1
-		CatIcon.Position = UDim2.new(0, 26, 0.5, -8)
-		CatIcon.Size = UDim2.new(0, 16, 0, 16)
+		CatIcon.Position = UDim2.new(0, 10, 0.5, -7)
+		CatIcon.Size = UDim2.new(0, 14, 0, 14)
 		CatIcon.ImageColor3 = Theme.SecondaryText
 		CatIcon.Parent = Header
 		if CatConfig.Icon ~= "" then
@@ -843,28 +873,40 @@ function VoraHub:Window(GuiConfig)
 		end
 
 		local CatTitle = Instance.new("TextLabel")
+		CatTitle.Name = "CatTitle"
 		CatTitle.Font = Theme.FontBold
 		CatTitle.Text = CatConfig.Name
 		CatTitle.TextColor3 = Theme.HeaderText
-		CatTitle.TextSize = 13
+		CatTitle.TextSize = 12
 		CatTitle.TextXAlignment = Enum.TextXAlignment.Left
 		CatTitle.BackgroundTransparency = 1
-		CatTitle.Position = UDim2.new(0, CatConfig.Icon ~= "" and 48 or 26, 0, 0)
+		CatTitle.Position = UDim2.new(0, CatConfig.Icon ~= "" and 32 or 12, 0, 0)
 		CatTitle.Size = UDim2.new(1, -60, 1, 0)
 		CatTitle.Parent = Header
 
+		local Arrow = Instance.new("ImageLabel")
+		Arrow.Name = "Arrow"
+		Arrow.Image = "rbxassetid://16851841101"
+		Arrow.BackgroundTransparency = 1
+		Arrow.Position = UDim2.new(1, -22, 0.5, -6)
+		Arrow.Size = UDim2.new(0, 12, 0, 12)
+		Arrow.ImageColor3 = Theme.SecondaryText
+		Arrow.Rotation = 90
+		Arrow.Parent = Header
+
 		-- Category Content (holds sub-tabs)
 		local Content = Instance.new("Frame")
+		Content.Name = "CategoryContent_" .. CatConfig.Name
 		Content.BackgroundTransparency = 1
 		Content.BorderSizePixel = 0
-		Content.Size = UDim2.new(1, -10, 0, 0)
+		Content.Size = UDim2.new(1, -16, 0, 0)
 		Content.AutomaticSize = Enum.AutomaticSize.Y
 		Content.LayoutOrder = CatConfig.LayoutOrder * 100 + 1
-		Content.Name = "CategoryContent_" .. CatConfig.Name
 		Content.Parent = SidebarScroll
 		Content.ClipsDescendants = true
 
 		local ContentList = Instance.new("UIListLayout")
+		ContentList.Name = "ContentList"
 		ContentList.Padding = UDim.new(0, 2)
 		ContentList.SortOrder = Enum.SortOrder.LayoutOrder
 		ContentList.Parent = Content
@@ -883,12 +925,10 @@ function VoraHub:Window(GuiConfig)
 				TweenService:Create(Arrow, TweenInfo.new(0.2), { Rotation = 0 }):Play()
 				Content.Visible = false
 			end
-			task.wait(0.05)
-			SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, SidebarList.AbsoluteContentSize.Y + 10)
+			task.delay(0.05, function()
+				SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, SidebarList.AbsoluteContentSize.Y + 20)
+			end)
 		end)
-
-		-- Auto-expand arrow rotation
-		Arrow.Rotation = 90
 
 		function CatFunc:AddTab(TabConfig)
 			TabConfig = TabConfig or {}
@@ -900,15 +940,16 @@ function VoraHub:Window(GuiConfig)
 
 			-- Sidebar Tab Button
 			local TabBtn = Instance.new("TextButton")
+			TabBtn.Name = "Tab_" .. TabConfig.Name
 			TabBtn.Text = ""
 			TabBtn.BackgroundTransparency = 1
-			TabBtn.Size = UDim2.new(1, -16, 0, 28)
+			TabBtn.Size = UDim2.new(1, -12, 0, 30)
 			TabBtn.LayoutOrder = TabCount
-			TabBtn.Name = "Tab_" .. TabConfig.Name
 			TabBtn.Parent = Content
 
-			-- Pill Highlight (rounded capsule background)
+			-- Pill Highlight (rounded capsule background — PERSIS kayak gambar)
 			local Pill = Instance.new("Frame")
+			Pill.Name = "Pill"
 			Pill.BackgroundColor3 = Theme.PillHighlight
 			Pill.BorderSizePixel = 0
 			Pill.Size = UDim2.new(1, 0, 1, 0)
@@ -918,9 +959,10 @@ function VoraHub:Window(GuiConfig)
 			Instance.new("UICorner", Pill).CornerRadius = UDim.new(0, 6)
 
 			local TabIcon = Instance.new("ImageLabel")
+			TabIcon.Name = "TabIcon"
 			TabIcon.BackgroundTransparency = 1
-			TabIcon.Position = UDim2.new(0, 10, 0.5, -7)
-			TabIcon.Size = UDim2.new(0, 14, 0, 14)
+			TabIcon.Position = UDim2.new(0, 10, 0.5, -6)
+			TabIcon.Size = UDim2.new(0, 12, 0, 12)
 			TabIcon.ImageColor3 = Theme.SecondaryText
 			TabIcon.ZIndex = 2
 			TabIcon.Parent = TabBtn
@@ -929,63 +971,67 @@ function VoraHub:Window(GuiConfig)
 			end
 
 			local TabLabel = Instance.new("TextLabel")
+			TabLabel.Name = "TabLabel"
 			TabLabel.Font = Theme.Font
 			TabLabel.Text = TabConfig.Name
 			TabLabel.TextColor3 = Theme.SecondaryText
 			TabLabel.TextSize = 12
 			TabLabel.TextXAlignment = Enum.TextXAlignment.Left
 			TabLabel.BackgroundTransparency = 1
-			TabLabel.Position = UDim2.new(0, TabConfig.Icon ~= "" and 32 or 12, 0, 0)
+			TabLabel.Position = UDim2.new(0, TabConfig.Icon ~= "" and 30 or 12, 0, 0)
 			TabLabel.Size = UDim2.new(1, -40, 1, 0)
 			TabLabel.ZIndex = 2
 			TabLabel.Parent = TabBtn
 
 			-- Content Page (Two-Column Layout)
 			local TabPage = Instance.new("ScrollingFrame")
+			TabPage.Name = "Page_" .. TabConfig.Name
 			TabPage.CanvasSize = UDim2.new(0, 0, 0, 0)
-			TabPage.ScrollBarImageTransparency = 1
-			TabPage.ScrollBarThickness = 2
+			TabPage.ScrollBarImageTransparency = 0.9
+			TabPage.ScrollBarThickness = 3
 			TabPage.ScrollBarImageColor3 = Theme.Border
 			TabPage.Active = true
 			TabPage.BackgroundTransparency = 1
 			TabPage.BorderSizePixel = 0
 			TabPage.Size = UDim2.new(1, 0, 1, 0)
 			TabPage.LayoutOrder = TabCount
-			TabPage.Name = "Page_" .. TabConfig.Name
 			TabPage.Parent = ContentScroll
 			TabPage.ClipsDescendants = true
 
 			local PageContainer = Instance.new("Frame")
+			PageContainer.Name = "PageContainer"
 			PageContainer.BackgroundTransparency = 1
 			PageContainer.BorderSizePixel = 0
 			PageContainer.Size = UDim2.new(1, -20, 0, 0)
 			PageContainer.AutomaticSize = Enum.AutomaticSize.Y
-			PageContainer.Position = UDim2.new(0, 10, 0, 5)
+			PageContainer.Position = UDim2.new(0, 10, 0, 10)
 			PageContainer.Parent = TabPage
 
 			local LeftColumn = Instance.new("Frame")
+			LeftColumn.Name = "LeftColumn"
 			LeftColumn.BackgroundTransparency = 1
 			LeftColumn.BorderSizePixel = 0
 			LeftColumn.Size = UDim2.new(0.5, -6, 0, 0)
 			LeftColumn.AutomaticSize = Enum.AutomaticSize.Y
-			LeftColumn.Name = "LeftColumn"
 			LeftColumn.Parent = PageContainer
 
 			local RightColumn = Instance.new("Frame")
+			RightColumn.Name = "RightColumn"
 			RightColumn.BackgroundTransparency = 1
 			RightColumn.BorderSizePixel = 0
 			RightColumn.Position = UDim2.new(0.5, 6, 0, 0)
 			RightColumn.Size = UDim2.new(0.5, -6, 0, 0)
 			RightColumn.AutomaticSize = Enum.AutomaticSize.Y
-			RightColumn.Name = "RightColumn"
 			RightColumn.Parent = PageContainer
 
 			local LeftList = Instance.new("UIListLayout")
+			LeftList.Name = "LeftList"
 			LeftList.Padding = UDim.new(0, 10)
 			LeftList.SortOrder = Enum.SortOrder.LayoutOrder
 			LeftList.Parent = LeftColumn
 
 			local RightList = Instance.new("UIListLayout")
+			RightList.Name = "RightList"
 			RightList.Padding = UDim.new(0, 10)
 			RightList.SortOrder = Enum.SortOrder.LayoutOrder
 			RightList.Parent = RightColumn
@@ -1003,12 +1049,10 @@ function VoraHub:Window(GuiConfig)
 				Page = TabPage
 			}
 			table.insert(catData.Tabs, tabData)
-			table.insert(AllTabs, tabData)
 
 			local function ActivateTab()
 				if ActiveTab == tabData then return end
 				if ActiveTab then
-					TweenService:Create(ActiveTab.Pill, TweenInfo.new(0.2), { BackgroundTransparency = 1 }):Play()
 					ActiveTab.Pill.Visible = false
 					TweenService:Create(ActiveTab.Label, TweenInfo.new(0.2), { TextColor3 = Theme.SecondaryText }):Play()
 					if ActiveTab.Icon.Image ~= "" then
@@ -1017,25 +1061,25 @@ function VoraHub:Window(GuiConfig)
 				end
 				ActiveTab = tabData
 				Pill.Visible = true
-				TweenService:Create(Pill, TweenInfo.new(0.2), { BackgroundTransparency = 0 }):Play()
 				TweenService:Create(TabLabel, TweenInfo.new(0.2), { TextColor3 = Theme.HeaderText }):Play()
 				if TabIcon.Image ~= "" then
 					TweenService:Create(TabIcon, TweenInfo.new(0.2), { ImageColor3 = Theme.HeaderText }):Play()
 				end
+				CurrentTabTitle.Text = TabConfig.Name
 				ContentPageLayout:JumpToIndex(TabCount)
 			end
 
 			TabBtn.Activated:Connect(ActivateTab)
 
-			if #AllTabs == 1 then
+			if not ActiveTab then
 				task.delay(0.1, function()
 					Pill.Visible = true
-					Pill.BackgroundTransparency = 0
 					TabLabel.TextColor3 = Theme.HeaderText
 					if TabIcon.Image ~= "" then
 						TabIcon.ImageColor3 = Theme.HeaderText
 					end
 					ActiveTab = tabData
+					CurrentTabTitle.Text = TabConfig.Name
 				end)
 			end
 
@@ -1051,36 +1095,39 @@ function VoraHub:Window(GuiConfig)
 				local ItemCount = 0
 				local TargetColumn = SectionConfig.Side == "Right" and RightColumn or LeftColumn
 
-				-- Card / Groupbox
+				-- Card / Groupbox (Kotak Gede)
 				local Card = Instance.new("Frame")
+				Card.Name = "Section_" .. SectionConfig.Name
 				Card.BackgroundColor3 = Theme.CardBG
 				Card.BorderSizePixel = 0
 				Card.Size = UDim2.new(1, 0, 0, 0)
 				Card.AutomaticSize = Enum.AutomaticSize.Y
 				Card.LayoutOrder = SectionCount
-				Card.Name = "Section_" .. SectionConfig.Name
 				Card.Parent = TargetColumn
 				Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 8)
 
 				local CardStroke = Instance.new("UIStroke")
+				CardStroke.Name = "CardStroke"
 				CardStroke.Color = Theme.Border
 				CardStroke.Thickness = 1
-				CardStroke.Transparency = 0.8
+				CardStroke.Transparency = 0.85
 				CardStroke.Parent = Card
 
 				local CardPadding = Instance.new("UIPadding")
-				CardPadding.PaddingLeft = UDim.new(0, 12)
-				CardPadding.PaddingRight = UDim.new(0, 12)
-				CardPadding.PaddingTop = UDim.new(0, 10)
-				CardPadding.PaddingBottom = UDim.new(0, 10)
+				CardPadding.PaddingLeft = UDim.new(0, 14)
+				CardPadding.PaddingRight = UDim.new(0, 14)
+				CardPadding.PaddingTop = UDim.new(0, 12)
+				CardPadding.PaddingBottom = UDim.new(0, 12)
 				CardPadding.Parent = Card
 
 				local CardList = Instance.new("UIListLayout")
+				CardList.Name = "CardList"
 				CardList.Padding = UDim.new(0, 8)
 				CardList.SortOrder = Enum.SortOrder.LayoutOrder
 				CardList.Parent = Card
 
 				local SectionTitle = Instance.new("TextLabel")
+				SectionTitle.Name = "SectionTitle"
 				SectionTitle.Font = Theme.FontBold
 				SectionTitle.Text = SectionConfig.Name
 				SectionTitle.TextColor3 = Theme.HeaderText
@@ -1088,18 +1135,18 @@ function VoraHub:Window(GuiConfig)
 				SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
 				SectionTitle.BackgroundTransparency = 1
 				SectionTitle.Size = UDim2.new(1, 0, 0, 16)
-				SectionTitle.Name = "SectionTitle"
 				SectionTitle.Parent = Card
 
 				local ContentFrame = Instance.new("Frame")
+				ContentFrame.Name = "ContentFrame"
 				ContentFrame.BackgroundTransparency = 1
 				ContentFrame.BorderSizePixel = 0
 				ContentFrame.Size = UDim2.new(1, 0, 0, 0)
 				ContentFrame.AutomaticSize = Enum.AutomaticSize.Y
-				ContentFrame.Name = "ContentFrame"
 				ContentFrame.Parent = Card
 
 				local ContentListLayout = Instance.new("UIListLayout")
+				ContentListLayout.Name = "ContentListLayout"
 				ContentListLayout.Padding = UDim.new(0, 6)
 				ContentListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 				ContentListLayout.Parent = ContentFrame
@@ -1114,26 +1161,27 @@ function VoraHub:Window(GuiConfig)
 
 					local ParagraphFunc = {}
 					local Paragraph = Instance.new("Frame")
+					Paragraph.Name = "Paragraph"
 					Paragraph.BackgroundTransparency = 1
 					Paragraph.LayoutOrder = ItemCount
 					Paragraph.Size = UDim2.new(1, 0, 0, 40)
-					Paragraph.Name = "Paragraph"
 					Paragraph.Parent = ContentFrame
 
 					local iconOffset = 0
 					if ParagraphConfig.Icon then
 						local IconImg = Instance.new("ImageLabel")
+						IconImg.Name = "IconImg"
 						IconImg.Size = UDim2.new(0, 18, 0, 18)
 						IconImg.Position = UDim2.new(0, 0, 0, 0)
 						IconImg.BackgroundTransparency = 1
 						IconImg.ImageColor3 = Theme.SecondaryText
 						IconImg.Image = ParagraphConfig.Icon
-						IconImg.Name = "ParagraphIcon"
 						IconImg.Parent = Paragraph
 						iconOffset = 24
 					end
 
 					local ParagraphTitle = Instance.new("TextLabel")
+					ParagraphTitle.Name = "ParagraphTitle"
 					ParagraphTitle.Font = Theme.FontBold
 					ParagraphTitle.Text = ParagraphConfig.Title
 					ParagraphTitle.TextColor3 = Theme.HeaderText
@@ -1143,10 +1191,10 @@ function VoraHub:Window(GuiConfig)
 					ParagraphTitle.BackgroundTransparency = 1
 					ParagraphTitle.Position = UDim2.new(0, iconOffset, 0, 0)
 					ParagraphTitle.Size = UDim2.new(1, -iconOffset, 0, 14)
-					ParagraphTitle.Name = "ParagraphTitle"
 					ParagraphTitle.Parent = Paragraph
 
 					local ParagraphContent = Instance.new("TextLabel")
+					ParagraphContent.Name = "ParagraphContent"
 					ParagraphContent.Font = Theme.Font
 					ParagraphContent.Text = ParagraphConfig.Content
 					ParagraphContent.TextColor3 = Theme.SecondaryText
@@ -1158,7 +1206,6 @@ function VoraHub:Window(GuiConfig)
 					ParagraphContent.Size = UDim2.new(1, -iconOffset, 0, 13)
 					ParagraphContent.TextWrapped = true
 					ParagraphContent.RichText = true
-					ParagraphContent.Name = "ParagraphContent"
 					ParagraphContent.Parent = Paragraph
 
 					local function UpdateSize()
@@ -1185,18 +1232,21 @@ function VoraHub:Window(GuiConfig)
 					ButtonConfig.SubCallback = ButtonConfig.SubCallback or function() end
 
 					local Button = Instance.new("Frame")
+					Button.Name = "Button"
 					Button.BackgroundTransparency = 1
 					Button.Size = UDim2.new(1, 0, 0, 34)
 					Button.LayoutOrder = ItemCount
 					Button.Parent = ContentFrame
 
 					local MainButton = Instance.new("TextButton")
+					MainButton.Name = "MainButton"
 					MainButton.Font = Theme.FontBold
 					MainButton.Text = ButtonConfig.Title
 					MainButton.TextSize = 12
 					MainButton.TextColor3 = Theme.HeaderText
 					MainButton.BackgroundColor3 = Theme.CardBG
 					MainButton.BackgroundTransparency = 0.5
+					MainButton.AutoButtonColor = false
 					MainButton.Size = ButtonConfig.SubTitle and UDim2.new(0.5, -4, 1, 0) or UDim2.new(1, 0, 1, 0)
 					MainButton.Position = UDim2.new(0, 0, 0, 0)
 					MainButton.Parent = Button
@@ -1216,12 +1266,14 @@ function VoraHub:Window(GuiConfig)
 
 					if ButtonConfig.SubTitle then
 						local SubButton = Instance.new("TextButton")
+						SubButton.Name = "SubButton"
 						SubButton.Font = Theme.FontBold
 						SubButton.Text = ButtonConfig.SubTitle
 						SubButton.TextSize = 12
 						SubButton.TextColor3 = Theme.HeaderText
 						SubButton.BackgroundColor3 = Theme.CardBG
 						SubButton.BackgroundTransparency = 0.5
+						SubButton.AutoButtonColor = false
 						SubButton.Size = UDim2.new(0.5, -4, 1, 0)
 						SubButton.Position = UDim2.new(0.5, 4, 0, 0)
 						SubButton.Parent = Button
@@ -1258,13 +1310,14 @@ function VoraHub:Window(GuiConfig)
 					local ToggleFunc = { Value = ToggleConfig.Default }
 
 					local Toggle = Instance.new("Frame")
+					Toggle.Name = "Toggle"
 					Toggle.BackgroundTransparency = 1
 					Toggle.LayoutOrder = ItemCount
 					Toggle.Size = UDim2.new(1, 0, 0, 36)
-					Toggle.Name = "Toggle"
 					Toggle.Parent = ContentFrame
 
 					local ToggleTitle = Instance.new("TextLabel")
+					ToggleTitle.Name = "ToggleTitle"
 					ToggleTitle.Font = Theme.FontBold
 					ToggleTitle.Text = ToggleConfig.Title
 					ToggleTitle.TextColor3 = Theme.HeaderText
@@ -1276,6 +1329,7 @@ function VoraHub:Window(GuiConfig)
 					ToggleTitle.Parent = Toggle
 
 					local ToggleContent = Instance.new("TextLabel")
+					ToggleContent.Name = "ToggleContent"
 					ToggleContent.Font = Theme.Font
 					ToggleContent.Text = ToggleConfig.Content
 					ToggleContent.TextColor3 = Theme.SecondaryText
@@ -1295,8 +1349,9 @@ function VoraHub:Window(GuiConfig)
 					ToggleContent:GetPropertyChangedSignal("TextBounds"):Connect(UpdateToggleSize)
 					UpdateToggleSize()
 
-					-- Pill Switch
+					-- Pill Switch (Persis gambar)
 					local SwitchFrame = Instance.new("Frame")
+					SwitchFrame.Name = "SwitchFrame"
 					SwitchFrame.AnchorPoint = Vector2.new(1, 0.5)
 					SwitchFrame.BackgroundColor3 = Theme.ToggleOff
 					SwitchFrame.BorderSizePixel = 0
@@ -1306,6 +1361,7 @@ function VoraHub:Window(GuiConfig)
 					Instance.new("UICorner", SwitchFrame).CornerRadius = UDim.new(1, 0)
 
 					local SwitchCircle = Instance.new("Frame")
+					SwitchCircle.Name = "SwitchCircle"
 					SwitchCircle.BackgroundColor3 = Theme.ToggleCircle
 					SwitchCircle.BorderSizePixel = 0
 					SwitchCircle.Position = UDim2.new(0, 2, 0.5, -7)
@@ -1314,6 +1370,7 @@ function VoraHub:Window(GuiConfig)
 					Instance.new("UICorner", SwitchCircle).CornerRadius = UDim.new(1, 0)
 
 					local SwitchBtn = Instance.new("TextButton")
+					SwitchBtn.Name = "SwitchBtn"
 					SwitchBtn.Text = ""
 					SwitchBtn.BackgroundTransparency = 1
 					SwitchBtn.Size = UDim2.new(1, 0, 1, 0)
@@ -1330,7 +1387,7 @@ function VoraHub:Window(GuiConfig)
 							if not ok then warn("Toggle Callback error:", err) end
 						end
 						if Value then
-							TweenService:Create(SwitchFrame, TweenInfo.new(0.2), { BackgroundColor3 = Theme.AccentColor }):Play()
+							TweenService:Create(SwitchFrame, TweenInfo.new(0.2), { BackgroundColor3 = Theme.ToggleOn }):Play()
 							TweenService:Create(SwitchCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 20, 0.5, -7) }):Play()
 							TweenService:Create(ToggleTitle, TweenInfo.new(0.2), { TextColor3 = Theme.HeaderText }):Play()
 						else
@@ -1368,13 +1425,14 @@ function VoraHub:Window(GuiConfig)
 					local SliderFunc = { Value = SliderConfig.Default }
 
 					local Slider = Instance.new("Frame")
+					Slider.Name = "Slider"
 					Slider.BackgroundTransparency = 1
 					Slider.LayoutOrder = ItemCount
 					Slider.Size = UDim2.new(1, 0, 0, 50)
-					Slider.Name = "Slider"
 					Slider.Parent = ContentFrame
 
 					local SliderTitle = Instance.new("TextLabel")
+					SliderTitle.Name = "SliderTitle"
 					SliderTitle.Font = Theme.FontBold
 					SliderTitle.Text = SliderConfig.Title
 					SliderTitle.TextColor3 = Theme.HeaderText
@@ -1385,6 +1443,7 @@ function VoraHub:Window(GuiConfig)
 					SliderTitle.Parent = Slider
 
 					local ValueBox = Instance.new("TextBox")
+					ValueBox.Name = "ValueBox"
 					ValueBox.Font = Theme.FontBold
 					ValueBox.Text = tostring(SliderConfig.Default)
 					ValueBox.TextColor3 = Theme.HeaderText
@@ -1401,8 +1460,9 @@ function VoraHub:Window(GuiConfig)
 					ValueStroke.Thickness = 1
 					ValueStroke.Parent = ValueBox
 
-					-- Track
+					-- Track (Ultra-thin)
 					local Track = Instance.new("Frame")
+					Track.Name = "Track"
 					Track.BackgroundColor3 = Theme.SliderTrack
 					Track.BorderSizePixel = 0
 					Track.Position = UDim2.new(0, 0, 0, 32)
@@ -1411,6 +1471,7 @@ function VoraHub:Window(GuiConfig)
 					Instance.new("UICorner", Track).CornerRadius = UDim.new(1, 0)
 
 					local Fill = Instance.new("Frame")
+					Fill.Name = "Fill"
 					Fill.BackgroundColor3 = Theme.AccentColor
 					Fill.BorderSizePixel = 0
 					Fill.Size = UDim2.new(0.5, 0, 1, 0)
@@ -1418,6 +1479,7 @@ function VoraHub:Window(GuiConfig)
 					Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
 
 					local Thumb = Instance.new("Frame")
+					Thumb.Name = "Thumb"
 					Thumb.BackgroundColor3 = Theme.ToggleCircle
 					Thumb.BorderSizePixel = 0
 					Thumb.Position = UDim2.new(0.5, -6, 0.5, -6)
@@ -1426,6 +1488,7 @@ function VoraHub:Window(GuiConfig)
 					Instance.new("UICorner", Thumb).CornerRadius = UDim.new(1, 0)
 
 					local ThumbStroke = Instance.new("UIStroke")
+					ThumbStroke.Name = "ThumbStroke"
 					ThumbStroke.Color = Theme.AccentColor
 					ThumbStroke.Thickness = 1.5
 					ThumbStroke.Parent = Thumb
@@ -1508,13 +1571,14 @@ function VoraHub:Window(GuiConfig)
 					local InputFunc = { Value = InputConfig.Default }
 
 					local Input = Instance.new("Frame")
+					Input.Name = "Input"
 					Input.BackgroundTransparency = 1
 					Input.LayoutOrder = ItemCount
 					Input.Size = UDim2.new(1, 0, 0, 56)
-					Input.Name = "Input"
 					Input.Parent = ContentFrame
 
 					local InputTitle = Instance.new("TextLabel")
+					InputTitle.Name = "InputTitle"
 					InputTitle.Font = Theme.FontBold
 					InputTitle.Text = InputConfig.Title
 					InputTitle.TextColor3 = Theme.HeaderText
@@ -1525,6 +1589,7 @@ function VoraHub:Window(GuiConfig)
 					InputTitle.Parent = Input
 
 					local InputContent = Instance.new("TextLabel")
+					InputContent.Name = "InputContent"
 					InputContent.Font = Theme.Font
 					InputContent.Text = InputConfig.Content
 					InputContent.TextColor3 = Theme.SecondaryText
@@ -1544,6 +1609,7 @@ function VoraHub:Window(GuiConfig)
 					UpdateInputSize()
 
 					local InputFrame = Instance.new("Frame")
+					InputFrame.Name = "InputFrame"
 					InputFrame.BackgroundColor3 = Theme.SearchBG
 					InputFrame.BorderSizePixel = 0
 					InputFrame.Position = UDim2.new(0, 0, 1, -28)
@@ -1556,6 +1622,7 @@ function VoraHub:Window(GuiConfig)
 					InputStroke.Parent = InputFrame
 
 					local InputBox = Instance.new("TextBox")
+					InputBox.Name = "InputBox"
 					InputBox.Font = Theme.Font
 					InputBox.PlaceholderText = InputConfig.Placeholder
 					InputBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
@@ -1606,13 +1673,14 @@ function VoraHub:Window(GuiConfig)
 					local DropdownFunc = { Value = DropdownConfig.Default, Options = DropdownConfig.Options }
 
 					local Dropdown = Instance.new("Frame")
+					Dropdown.Name = "Dropdown"
 					Dropdown.BackgroundTransparency = 1
 					Dropdown.LayoutOrder = ItemCount
 					Dropdown.Size = UDim2.new(1, 0, 0, 56)
-					Dropdown.Name = "Dropdown"
 					Dropdown.Parent = ContentFrame
 
 					local DropdownTitle = Instance.new("TextLabel")
+					DropdownTitle.Name = "DropdownTitle"
 					DropdownTitle.Font = Theme.FontBold
 					DropdownTitle.Text = DropdownConfig.Title
 					DropdownTitle.TextColor3 = Theme.HeaderText
@@ -1623,6 +1691,7 @@ function VoraHub:Window(GuiConfig)
 					DropdownTitle.Parent = Dropdown
 
 					local DropdownContent = Instance.new("TextLabel")
+					DropdownContent.Name = "DropdownContent"
 					DropdownContent.Font = Theme.Font
 					DropdownContent.Text = DropdownConfig.Content
 					DropdownContent.TextColor3 = Theme.SecondaryText
@@ -1642,11 +1711,13 @@ function VoraHub:Window(GuiConfig)
 					UpdateDropdownSize()
 
 					local SelectFrame = Instance.new("TextButton")
+					SelectFrame.Name = "SelectFrame"
 					SelectFrame.Text = ""
 					SelectFrame.BackgroundColor3 = Theme.SearchBG
 					SelectFrame.BorderSizePixel = 0
 					SelectFrame.Position = UDim2.new(0, 0, 1, -28)
 					SelectFrame.Size = UDim2.new(1, 0, 0, 28)
+					SelectFrame.AutoButtonColor = false
 					SelectFrame.Parent = Dropdown
 					Instance.new("UICorner", SelectFrame).CornerRadius = UDim.new(0, 6)
 					local SelectStroke = Instance.new("UIStroke")
@@ -1655,6 +1726,7 @@ function VoraHub:Window(GuiConfig)
 					SelectStroke.Parent = SelectFrame
 
 					local SelectedText = Instance.new("TextLabel")
+					SelectedText.Name = "SelectedText"
 					SelectedText.Font = Theme.Font
 					SelectedText.Text = DropdownConfig.Multi and "Select Options" or "Select Option"
 					SelectedText.TextColor3 = Theme.SecondaryText
@@ -1666,6 +1738,7 @@ function VoraHub:Window(GuiConfig)
 					SelectedText.Parent = SelectFrame
 
 					local ArrowIcon = Instance.new("ImageLabel")
+					ArrowIcon.Name = "ArrowIcon"
 					ArrowIcon.Image = "rbxassetid://16851841101"
 					ArrowIcon.Rotation = -90
 					ArrowIcon.BackgroundTransparency = 1
@@ -1679,6 +1752,7 @@ function VoraHub:Window(GuiConfig)
 						ActiveDropdownFrame = SelectFrame
 
 						local List = Instance.new("Frame")
+						List.Name = "DropdownList"
 						List.BackgroundColor3 = Theme.CardBG
 						List.BorderSizePixel = 0
 						List.Parent = DropdownOverlay
@@ -1696,6 +1770,7 @@ function VoraHub:Window(GuiConfig)
 						List.Size = UDim2.new(0, SelectFrame.AbsoluteSize.X, 0, 0)
 
 						local ListScroll = Instance.new("ScrollingFrame")
+						ListScroll.Name = "ListScroll"
 						ListScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 						ListScroll.ScrollBarImageTransparency = 1
 						ListScroll.ScrollBarThickness = 0
@@ -1708,12 +1783,13 @@ function VoraHub:Window(GuiConfig)
 						ListScroll.Parent = List
 
 						local ListLayout = Instance.new("UIListLayout")
+						ListLayout.Name = "ListLayout"
 						ListLayout.Padding = UDim.new(0, 2)
 						ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 						ListLayout.Parent = ListScroll
 
 						ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-							local h = math.min(ListLayout.AbsoluteContentSize.Y + 8, 180)
+							local h = math.min(ListLayout.AbsoluteContentSize.Y + 8, 200)
 							List.Size = UDim2.new(0, SelectFrame.AbsoluteSize.X, 0, h)
 							ListScroll.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 4)
 						end)
@@ -1736,6 +1812,7 @@ function VoraHub:Window(GuiConfig)
 							Option.ZIndex = 102
 
 							local OptionBtn = Instance.new("TextButton")
+							OptionBtn.Name = "OptionBtn"
 							OptionBtn.Text = ""
 							OptionBtn.BackgroundTransparency = 1
 							OptionBtn.Size = UDim2.new(1, 0, 1, 0)
@@ -1743,6 +1820,7 @@ function VoraHub:Window(GuiConfig)
 							OptionBtn.Parent = Option
 
 							local OptionText = Instance.new("TextLabel")
+							OptionText.Name = "OptionText"
 							OptionText.Font = Theme.Font
 							OptionText.Text = label
 							OptionText.TextColor3 = Theme.SecondaryText
@@ -1755,6 +1833,7 @@ function VoraHub:Window(GuiConfig)
 							OptionText.Parent = Option
 
 							local Check = Instance.new("Frame")
+							Check.Name = "Check"
 							Check.BackgroundColor3 = Theme.AccentColor
 							Check.BorderSizePixel = 0
 							Check.Size = UDim2.new(0, 0, 0, 0)
@@ -1803,9 +1882,11 @@ function VoraHub:Window(GuiConfig)
 					end)
 
 					function DropdownFunc:Clear()
-						for _, child in DropdownOverlay:GetChildren() do
-							if child.Name == "Option" then
-								child:Destroy()
+						for _, child in ipairs(DropdownOverlay:GetChildren()) do
+							if child.Name == "DropdownList" then
+								for _, opt in ipairs(child:FindFirstChildOfClass("ScrollingFrame"):GetChildren()) do
+									if opt.Name == "Option" then opt:Destroy() end
+								end
 							end
 						end
 						DropdownFunc.Value = DropdownConfig.Multi and {} or nil
@@ -1825,26 +1906,28 @@ function VoraHub:Window(GuiConfig)
 							SaveConfig()
 
 							local texts = {}
-							-- Update visuals if overlay is open
-							for _, Drop in pairs(DropdownOverlay:GetChildren()) do
-								if Drop:IsA("Frame") and Drop:FindFirstChildOfClass("ScrollingFrame") then
-									for _, Option in Drop:FindFirstChildOfClass("ScrollingFrame"):GetChildren() do
-										if Option.Name == "Option" and Option:FindFirstChild("OptionText") then
-											local v = Option:GetAttribute("RealValue")
-											local selected = DropdownConfig.Multi and table.find(DropdownFunc.Value, v) or DropdownFunc.Value == v
+							for _, Drop in ipairs(DropdownOverlay:GetChildren()) do
+								if Drop.Name == "DropdownList" then
+									local scroll = Drop:FindFirstChildOfClass("ScrollingFrame")
+									if scroll then
+										for _, Option in ipairs(scroll:GetChildren()) do
+											if Option.Name == "Option" and Option:FindFirstChild("OptionText") then
+												local v = Option:GetAttribute("RealValue")
+												local selected = DropdownConfig.Multi and table.find(DropdownFunc.Value, v) or DropdownFunc.Value == v
 
-											local Check = Option:FindFirstChildOfClass("Frame")
-											if selected then
-												if Check then
-													TweenService:Create(Check, TweenInfo.new(0.15), { Size = UDim2.new(0, 3, 0, 12), Position = UDim2.new(0, 2, 0.5, -6) }):Play()
+												local Check = Option:FindFirstChild("Check")
+												if selected then
+													if Check then
+														TweenService:Create(Check, TweenInfo.new(0.15), { Size = UDim2.new(0, 3, 0, 12), Position = UDim2.new(0, 2, 0.5, -6) }):Play()
+													end
+													TweenService:Create(Option.OptionText, TweenInfo.new(0.15), { TextColor3 = Theme.HeaderText }):Play()
+													table.insert(texts, Option.OptionText.Text)
+												else
+													if Check then
+														TweenService:Create(Check, TweenInfo.new(0.1), { Size = UDim2.new(0, 0, 0, 0) }):Play()
+													end
+													TweenService:Create(Option.OptionText, TweenInfo.new(0.1), { TextColor3 = Theme.SecondaryText }):Play()
 												end
-												TweenService:Create(Option.OptionText, TweenInfo.new(0.15), { TextColor3 = Theme.HeaderText }):Play()
-												table.insert(texts, Option.OptionText.Text)
-											else
-												if Check then
-													TweenService:Create(Check, TweenInfo.new(0.1), { Size = UDim2.new(0, 0, 0, 0) }):Play()
-												end
-												TweenService:Create(Option.OptionText, TweenInfo.new(0.1), { TextColor3 = Theme.SecondaryText }):Play()
 											end
 										end
 									end
@@ -1884,6 +1967,14 @@ function VoraHub:Window(GuiConfig)
 						end
 					end
 
+					function DropdownFunc:SetValue(val)
+						self:Set(val)
+					end
+
+					function DropdownFunc:GetValue()
+						return self.Value
+					end
+
 					DropdownFunc:SetValues(DropdownFunc.Options, DropdownFunc.Value)
 					Elements[configKey] = DropdownFunc
 					ItemCount = ItemCount + 1
@@ -1911,7 +2002,7 @@ function VoraHub:Window(GuiConfig)
 		return CatFunc
 	end
 
-	--// Load saved config after all elements have been created
+	--// Load saved config after all elements created
 	task.delay(0.5, function()
 		LoadConfigElements()
 	end)
@@ -1920,4 +2011,3 @@ function VoraHub:Window(GuiConfig)
 end
 
 return VoraHub
-
