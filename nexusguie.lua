@@ -1,5 +1,5 @@
 --[[
-    Omverd Hub - Custom UI Library
+    Omverd Hub - Custom UI Library Like
     Version: 1.0.0
     Author: ShieldTeam
     Style: WindUI-inspired, Glassmorphism, Dark Theme
