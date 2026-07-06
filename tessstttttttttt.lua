@@ -178,6 +178,10 @@ _G.Config = _G.Config or {
     AntiFlashbang = false,
     AutoClaimSeed = false,
     ClaimSeedTypes = { "All" },
+    FavoriteFruits = {},
+    FavoriteMutations = {},
+    FavoriteType = "None",
+    AutoFavorite = false,
 }
 
 if typeof(_G.Config.HarvestSpeed) == "number" then
@@ -2251,6 +2255,40 @@ SaveManager:Register("AutoSprinkler", SprinklerSection:AddToggle({
 }), "Toggle")
 
 -- ===========================================
+-- UI: AUTO FAVORITE SECTION
+-- ===========================================
+local FavoriteSection = TabMain:AddSection("Auto Favorite", true, "Left")
+
+SaveManager:Register("FavoriteFruits", FavoriteSection:AddDropdown({
+    Title = "Whitelist Fruits",
+    Multi = true,
+    Options = harvestOptions,
+    Default = _G.Config.FavoriteFruits,
+    Callback = function(v) _G.Config.FavoriteFruits = v end,
+}), "Dropdown")
+
+SaveManager:Register("FavoriteMutations", FavoriteSection:AddDropdown({
+    Title = "Whitelist Mutations",
+    Multi = true,
+    Options = MutationList,
+    Default = _G.Config.FavoriteMutations,
+    Callback = function(v) _G.Config.FavoriteMutations = v end,
+}), "Dropdown")
+
+SaveManager:Register("FavoriteType", FavoriteSection:AddDropdown({
+    Title = "Favorite Type",
+    Options = { "None", "Max Value", "Max Size" },
+    Default = { _G.Config.FavoriteType or "None" },
+    Callback = function(v) _G.Config.FavoriteType = getSelectedValue(v) or "None" end,
+}), "Dropdown")
+
+SaveManager:Register("AutoFavorite", FavoriteSection:AddToggle({
+    Title = "Auto Favorite",
+    Default = _G.Config.AutoFavorite,
+    Callback = function(v) _G.Config.AutoFavorite = v end,
+}), "Toggle")
+
+-- ===========================================
 -- UI: AUTO BUY SHOP & PET SECTION
 -- ===========================================
 local ShopSection = TabShop:AddSection("Auto Buy Shop", true, "Left")
@@ -2958,6 +2996,141 @@ TrackTask(function()
 end)
 
 -- ===========================================
+-- TASKS: AUTO FAVORITE LOGIC
+-- ===========================================
+local FavSellValueData, FavMutationData = nil, nil
+pcall(function() FavSellValueData = require(ReplicatedStorage.SharedModules.SellValueData) end)
+pcall(function() FavMutationData = require(ReplicatedStorage.SharedModules.MutationData) end)
+
+local function favSelectionSet(raw)
+    local set = {}
+    if type(raw) == "table" then
+        for k, v in pairs(raw) do
+            if type(k) == "string" and v == true then set[k] = true
+            elseif type(v) == "string" then set[v] = true end
+        end
+    end
+    return set
+end
+
+local function favSplitMutStr(raw)
+    if type(raw) ~= "string" or raw == "" then return {} end
+    local list = {}
+    for part in raw:gmatch("[^%+%,]+") do
+        local s = part:match("^%s*(.-)%s*$")
+        if s ~= "" then table.insert(list, s) end
+    end
+    return list
+end
+
+local function favoritePassesFilter(tool, fruitSet, mutSet)
+    local fruitName = tool:GetAttribute("FruitName") or tool:GetAttribute("Fruit")
+    if not fruitName then return false end
+
+    local hasFruits, hasMuts = next(fruitSet) ~= nil, next(mutSet) ~= nil
+    if not hasFruits and not hasMuts then return false end
+
+    local fruitMatch = hasFruits and fruitSet[fruitName] == true
+    local mutMatch = false
+    for _, m in ipairs(favSplitMutStr(tool:GetAttribute("Mutation") or "")) do
+        if mutSet[m] then mutMatch = true break end
+    end
+
+    if hasFruits and not hasMuts then return fruitMatch
+    elseif not hasFruits and hasMuts then return mutMatch
+    else return fruitMatch or mutMatch end
+end
+
+local function favoriteToolValue(tool)
+    local name = tool:GetAttribute("FruitName") or tool:GetAttribute("Fruit")
+    if not name or not FavSellValueData then return 0 end
+    local sizeMulti = tool:GetAttribute("SizeMulti") or tool:GetAttribute("SizeMultiplier") or 1
+    local mutation = tool:GetAttribute("Mutation")
+    local mult = 1
+    if mutation and mutation ~= "" and FavMutationData and FavMutationData.ReturnPriceMultiplier then
+        mult = FavMutationData.ReturnPriceMultiplier(mutation) or 1
+    end
+    return math.floor((FavSellValueData[name] or 0) * (sizeMulti ^ 3) * mult)
+end
+
+local function setFruitFavorite(tool, isFav)
+    local id = tool:GetAttribute("Id")
+    if not id then return end
+    tool:SetAttribute("IsFavorite", if isFav then true else nil)
+    pcall(function() Networking.Backpack.SetFruitFavorite:Fire(id, isFav) end)
+end
+
+local function getFavoriteCandidates()
+    local tools = {}
+    local char, bp = player.Character, player:FindFirstChild("Backpack")
+    if char then
+        local equipped = char:FindFirstChildOfClass("Tool")
+        if equipped and equipped:GetAttribute("FruitName") then table.insert(tools, equipped) end
+    end
+    if bp then
+        for _, tool in ipairs(bp:GetChildren()) do
+            if tool:IsA("Tool") and tool:GetAttribute("FruitName") then table.insert(tools, tool) end
+        end
+    end
+    return tools
+end
+
+local function runAutoFavoriteScan()
+    if not Networking then refreshNetworking() end
+    local fruitSet = favSelectionSet(_G.Config.FavoriteFruits)
+    local mutSet = favSelectionSet(_G.Config.FavoriteMutations)
+    local favType = _G.Config.FavoriteType or "None"
+    local tools = getFavoriteCandidates()
+
+    local bestValue, bestTools = 0, {}
+    if favType ~= "None" then
+        for _, tool in ipairs(tools) do
+            local val = favType == "Max Value" and favoriteToolValue(tool) or (tool:GetAttribute("Weight") or 0)
+            if val > bestValue then
+                bestValue, bestTools = val, { tool }
+            elseif val == bestValue and val > 0 then
+                table.insert(bestTools, tool)
+            end
+        end
+    end
+
+    for _, tool in ipairs(tools) do
+        if not _G.Config.AutoFavorite or _G.ShieldTeam_ScriptId ~= scriptId then break end
+        if not (tool and tool.Parent) then continue end
+
+        local shouldFav = favoritePassesFilter(tool, fruitSet, mutSet)
+        if favType ~= "None" and bestValue > 0 then
+            for _, bTool in ipairs(bestTools) do
+                if bTool == tool then shouldFav = true break end
+            end
+        end
+
+        if shouldFav and tool:GetAttribute("IsFavorite") ~= true then
+            setFruitFavorite(tool, true)
+            task.wait(0.1)
+        end
+    end
+end
+
+TrackTask(function()
+    while _G.ShieldTeam_ScriptId == scriptId do
+        if _G.Config.AutoFavorite then
+            pcall(runAutoFavoriteScan)
+            task.wait(60)
+        else
+            task.wait(0.5)
+        end
+    end
+end)
+
+TrackConnection(player:WaitForChild("Backpack").ChildAdded:Connect(function(tool)
+    if not _G.Config.AutoFavorite or _G.ShieldTeam_ScriptId ~= scriptId then return end
+    if not (tool:IsA("Tool") and tool:GetAttribute("FruitName")) then return end
+    task.wait(0.05)
+    pcall(runAutoFavoriteScan)
+end))
+
+-- ===========================================
 -- TASKS: AUTO SPRINKLER LOGIC
 -- ===========================================
 local SPRINKLER_RADIUS = {}
@@ -3052,9 +3225,15 @@ TrackTask(function()
                                             clusterX = clusterX / clusterCount
                                             clusterZ = clusterZ / clusterCount
                                             local sprPos = Vector3.new(clusterX, pos.Y + 20, clusterZ)
+                                            local areaParts = {}
+                                            for _, part in ipairs(CollectionService:GetTagged("PlantArea")) do
+                                                if part:IsDescendantOf(plot) then
+                                                    table.insert(areaParts, part)
+                                                end
+                                            end
                                             local rcParams = RaycastParams.new()
                                             rcParams.FilterType = Enum.RaycastFilterType.Include
-                                            rcParams.FilterDescendantsInstances = { plot }
+                                            rcParams.FilterDescendantsInstances = areaParts
                                             local hit = workspace:Raycast(sprPos, Vector3.new(0, -40, 0), rcParams)
                                             if hit and hit.Instance then
                                                 local tooClose = false
