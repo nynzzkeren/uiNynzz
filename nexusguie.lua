@@ -186,7 +186,7 @@ function Speed_Library:SetNotification(Config)
   NotificationLayout.ChildRemoved:Connect(function()
     Count = 0
     local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-    
+  
     for _, v in ipairs(NotificationLayout:GetChildren()) do
       local NewPOS = UDim2.new(0, 0, 1, -((v.Size.Y.Offset + 12) * Count))
       local tween = TweenService:Create(v, tweenInfo, {Position = NewPOS})
@@ -331,7 +331,6 @@ function Speed_Library:SetNotification(Config)
     TextYAlignment = Enum.TextYAlignment.Top,
     BackgroundColor3 = Color3.fromRGB(255, 255, 255),
     BackgroundTransparency = 0.999,
-    TextColor3 = Color3.fromRGB(150, 150, 150),
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
     Position = UDim2.new(0, 10, 0, 27),
@@ -376,8 +375,8 @@ function Speed_Library:SetNotification(Config)
 end
 
 function Speed_Library:CreateWindow(Config)
-  local Title = Config[1] or Config.Title or ""
-  local Description = Config[2] or Config.Description or ""
+  local Title = "Shield Team || Premium" -- Overwritten as requested
+  local Description = "" 
   local TabWidth = Config[3] or Config["Tab Width"] or 120
   local SizeUi = Config[4] or Config.SizeUi or UDim2.fromOffset(550, 315)
 
@@ -413,16 +412,29 @@ function Speed_Library:CreateWindow(Config)
 
   local Main = Custom:Create("Frame", {
     AnchorPoint = Vector2.new(0.5, 0.5),
-    BackgroundColor3 = Color3.fromRGB(15, 15, 15),
-    BackgroundTransparency = 0.1,
+    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+    BackgroundTransparency = 0, -- Set to 0 to show gradient
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
     Position = UDim2.new(0.5, 0, 0.5, 0),
     Size = SizeUi,
     Name = "Main"
   }, DropShadow)
+  
+  -- Dark Purple Gradient implementation
+  Custom:Create("UIGradient", {
+    Color = ColorSequence.new{
+      ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 10, 10)),
+      ColorSequenceKeypoint.new(1, Color3.fromRGB(65, 10, 120))
+    },
+    Rotation = 45,
+    Parent = Main
+  })
 
-  Custom:Create("UICorner", {}, Main)
+  -- Rounded Corners
+  Custom:Create("UICorner", {
+    CornerRadius = UDim.new(0, 12)
+  }, Main)
 
   Custom:Create("UIStroke", {
     Color = Color3.fromRGB(50, 50, 50),
@@ -438,18 +450,19 @@ function Speed_Library:CreateWindow(Config)
     Name = "Top"
   }, Main)
 
+  -- Title Label centered
   local TextLabel = Custom:Create("TextLabel", {
     Font = Enum.Font.GothamBold,
     Text = Title,
     TextColor3 = Color3.fromRGB(255, 255, 255),
     TextSize = 14,
-    TextXAlignment = Enum.TextXAlignment.Left,
+    TextXAlignment = Enum.TextXAlignment.Center,
     BackgroundColor3 = Color3.fromRGB(255, 255, 255),
     BackgroundTransparency = 0.9990000128746033,
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
-    Size = UDim2.new(1, -100, 1, 0),
-    Position = UDim2.new(0, 10, 0, 0)
+    Size = UDim2.new(1, 0, 1, 0),
+    Position = UDim2.new(0, 0, 0, 0)
   }, Top)
 
   Custom:Create("UICorner", {}, Top)
@@ -465,7 +478,8 @@ function Speed_Library:CreateWindow(Config)
     BorderColor3 = Color3.fromRGB(0, 0, 0),
     BorderSizePixel = 0,
     Size = UDim2.new(1, -(TextLabel.TextBounds.X + 104), 1, 0),
-    Position = UDim2.new(0, TextLabel.TextBounds.X + 15, 0, 0)
+    Position = UDim2.new(0, TextLabel.TextBounds.X + 15, 0, 0),
+    Visible = false -- Hidden since Title is centered
   }, Top)
 
   Custom:Create("UIStroke", {
@@ -626,10 +640,26 @@ function Speed_Library:CreateWindow(Config)
 		if Open_Close.Visible then Open_Close.Visible = false end
 	end)
 
+  -- Close with warning
   Close.Activated:Connect(function()
 		CircleClick(Close, Player:GetMouse().X, Player:GetMouse().Y)
-    if SpeedHubXGui then SpeedHubXGui:Destroy() end
-		if not Speed_Library.Unloaded then Speed_Library.Unloaded = true end
+        
+        local Bindable = Instance.new("BindableFunction")
+        Bindable.OnInvoke = function(response)
+            if response == "Ya, Tutup" then
+                if SpeedHubXGui then SpeedHubXGui:Destroy() end
+                if not Speed_Library.Unloaded then Speed_Library.Unloaded = true end
+            end
+        end
+
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Shield Team Peringatan!";
+            Text = "Apakah kamu yakin ingin menutup UI Shield Team?";
+            Duration = 5;
+            Button1 = "Ya, Tutup";
+            Button2 = "Batal";
+            Callback = Bindable;
+        })
 	end)
 
   DropShadowHolder.Size = UDim2.new(0, 115 + TextLabel.TextBounds.X + 1 + TextLabel1.TextBounds.X, 0, 350)
@@ -1000,6 +1030,7 @@ function Speed_Library:CreateWindow(Config)
         Size = UDim2.new(0, 0, 0, 2),
         Name = "SectionDecideFrame"
       }, Section)
+    
       Custom:Create("UICorner", {}, SectionDecideFrame)
       Custom:Create("UIGradient", {
         Color = ColorSequence.new{
@@ -1120,7 +1151,7 @@ function Speed_Library:CreateWindow(Config)
           Size = UDim2.new(1, -16, 0, 13),
           Name = "ParagraphTitle",
         }, Paragraph)
-      
+    
         local ParagraphContent = Custom:Create("TextLabel", {
           Font = Enum.Font.GothamBold,
           Text = Content,
@@ -1447,7 +1478,7 @@ function Speed_Library:CreateWindow(Config)
         Custom:Create("UICorner", {
           CornerRadius = UDim.new(0, 4)
         }, FeatureFrame2)
-      
+       
         local UIStroke8 = Custom:Create("UIStroke", {
           Color = Color3.fromRGB(255, 255, 255),
           Thickness = 2,
@@ -1509,6 +1540,7 @@ function Speed_Library:CreateWindow(Config)
 
 				local Funcs_Slider = {Value = Default}
         
+  
         local Slider = Custom:Create("Frame", {
 					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 					BackgroundTransparency = 0.9350000023841858,
@@ -1676,7 +1708,7 @@ function Speed_Library:CreateWindow(Config)
             local CurrPosX = Input.Position.X
             if CurrPosX ~= _LastX then
               _LastX = CurrPosX
-      
+  
               local SizeScale = math.clamp((CurrPosX - SliderFrame.AbsolutePosition.X) / SliderFrame.AbsoluteSize.X, 0, 1)
               Funcs_Slider:Set(Min + ((Max - Min) * SizeScale))
             end
@@ -1692,7 +1724,7 @@ function Speed_Library:CreateWindow(Config)
             TextBox.Text = "0"
           end
         end)
-        
+       
         TextBox.FocusLost:Connect(function()
           if TextBox.Text ~= "" then
             Funcs_Slider:Set(tonumber(TextBox.Text))
@@ -1702,7 +1734,7 @@ function Speed_Library:CreateWindow(Config)
             Callback(Funcs_Slider.Value)
           end
         end)
-        
+ 
         Funcs_Slider:Set(tonumber(Default))
         Callback(Funcs_Slider.Value)
 
@@ -1798,7 +1830,7 @@ function Speed_Library:CreateWindow(Config)
 
         Custom:Create("UICorner", {
           CornerRadius = UDim.new(0, 4)
-        }, InputFrame)
+         }, InputFrame)
 
         local InputTextBox = Custom:Create("TextBox", {
           CursorPosition = -1,
@@ -1907,7 +1939,7 @@ function Speed_Library:CreateWindow(Config)
           Name = "DropdownContent",
           Parent = Dropdown
         })
-        
+  
 				DropdownContent.Size = UDim2.new(1, -180, 0, 12 + (12 * (DropdownContent.TextBounds.X // DropdownContent.AbsoluteSize.X)))
 				DropdownContent.TextWrapped = true
 				Dropdown.Size = UDim2.new(1, 0, 0, DropdownContent.AbsoluteSize.Y + 33)
@@ -1946,7 +1978,7 @@ function Speed_Library:CreateWindow(Config)
             local tweenInfo = TweenInfo.new(0.1)
 
             DropPageLayout:JumpToIndex(SelectOptionsFrame.LayoutOrder)
-                            
+                           
             local BlurTween = TweenService:Create(MoreBlur, tweenInfo, {BackgroundTransparency = 0.7})
             local DropdownTween = TweenService:Create(DropdownSelect, tweenInfo, {Position = UDim2.new(1, -11, 0.5, 0)})
               
@@ -2124,7 +2156,7 @@ function Speed_Library:CreateWindow(Config)
             Position = UDim2.new(0, 2, 0.5, 0),
             Size = UDim2.new(0, 0, 0, 0),
             Name = "ChooseFrame"
-          }, Option)
+           }, Option)
   
           Custom:Create("UIStroke", {
             Color = Custom.ColorRGB,
